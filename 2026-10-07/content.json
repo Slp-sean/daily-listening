@@ -1,0 +1,541 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-07",
+  "preview": true,
+  "words": [
+    {
+      "word": "immerse",
+      "translation": "v. 使沉浸（于）；使深陷（于）；使浸没（于液体中）",
+      "order": 1,
+      "pack_id": "P001"
+    },
+    {
+      "word": "apt",
+      "translation": "易于……的，有……倾向的；恰当的，适宜的；善学的，聪明的",
+      "order": 2,
+      "pack_id": "P001"
+    },
+    {
+      "word": "moist",
+      "translation": "微湿的，潮润的；潮湿的（空气、地区）；含泪的，泪汪汪的",
+      "order": 3,
+      "pack_id": "P001"
+    },
+    {
+      "word": "compress",
+      "translation": "v. 压紧，压缩；精简，浓缩；压缩（文件）；缩短（时间）\nn. （止血、减痛等的）敷布，压布",
+      "order": 4,
+      "pack_id": "P001"
+    },
+    {
+      "word": "sentiment",
+      "translation": "观点，看法；情绪，情感；多愁善感",
+      "order": 5,
+      "pack_id": "P001"
+    },
+    {
+      "word": "bewilder",
+      "translation": "使迷惑，使糊涂；使不知所措",
+      "order": 6,
+      "pack_id": "P001"
+    },
+    {
+      "word": "aviation",
+      "translation": "航空，飞行（术）；航空工业，飞机工业",
+      "order": 7,
+      "pack_id": "P001"
+    },
+    {
+      "word": "ultimate",
+      "translation": "最终的，最后的；最根本的，最基础的；极限的，终极的；首要的，决定性的",
+      "order": 8,
+      "pack_id": "P001"
+    },
+    {
+      "word": "cocaine",
+      "translation": "可卡因，古柯碱",
+      "order": 9,
+      "pack_id": "P001"
+    },
+    {
+      "word": "installment",
+      "translation": "分期付款；（分期连载的）一部分；（安装）安装；（就职）就职",
+      "order": 10,
+      "pack_id": "P001"
+    },
+    {
+      "word": "corridor",
+      "translation": "n. 走廊，过道（建筑物或火车内）；走廊地带，狭长地带（地理）；通道，走廊（外交、地理）",
+      "order": 11,
+      "pack_id": "P001"
+    },
+    {
+      "word": "acupuncture",
+      "translation": "n. 针灸，针刺疗法；v. 对……施行针刺疗法",
+      "order": 12,
+      "pack_id": "P001"
+    },
+    {
+      "word": "slump",
+      "translation": "v. （价格、价值、数量等）骤降，猛跌；惨败；（因无力站立而）倒下，倚靠；（肩或脑袋）耷拉",
+      "order": 13,
+      "pack_id": "P001"
+    },
+    {
+      "word": "sacred",
+      "translation": "神圣的，宗教的；受尊重的，不可侵犯的",
+      "order": 14,
+      "pack_id": "P001"
+    },
+    {
+      "word": "amateur",
+      "translation": "n. 业余爱好者；生手，外行; adj. 非专业的，业余爱好的；不熟练的",
+      "order": 15,
+      "pack_id": "P001"
+    },
+    {
+      "word": "appetite",
+      "translation": "食欲，胃口；欲望，爱好",
+      "order": 16,
+      "pack_id": "P001"
+    },
+    {
+      "word": "commerce",
+      "translation": "n. 贸易，商业；<旧>社交，交往；<旧>性交",
+      "order": 17,
+      "pack_id": "P001"
+    },
+    {
+      "word": "testify",
+      "translation": "作证；证明，证实；见证（上帝存在）",
+      "order": 18,
+      "pack_id": "P001"
+    },
+    {
+      "word": "ratio",
+      "translation": "比率，比例",
+      "order": 19,
+      "pack_id": "P001"
+    },
+    {
+      "word": "tube",
+      "translation": "管，管子；软管；管状物；管状器官；地铁（英）",
+      "order": 20,
+      "pack_id": "P001"
+    },
+    {
+      "word": "longitude",
+      "translation": "经度；经线",
+      "order": 21,
+      "pack_id": "P002"
+    },
+    {
+      "word": "pine",
+      "translation": "松树；渴望，思念",
+      "order": 22,
+      "pack_id": "P002"
+    },
+    {
+      "word": "lever",
+      "translation": "杠杆；手段",
+      "order": 23,
+      "pack_id": "P002"
+    },
+    {
+      "word": "proportionate",
+      "translation": "adj. 成比例的；相称的；适当的；vt. 使成比例；使相称",
+      "order": 24,
+      "pack_id": "P002"
+    },
+    {
+      "word": "curse",
+      "translation": "n. 骂人话，咒骂语；咒语，魔咒；祸根，祸因；月经，例假（the curse）；v. 诅咒，咒骂",
+      "order": 25,
+      "pack_id": "P002"
+    },
+    {
+      "word": "makeup",
+      "translation": "n. 组成，构造；化妆品；<美>补考；天性，性格；补给，补充",
+      "order": 26,
+      "pack_id": "P002"
+    },
+    {
+      "word": "acquaint",
+      "translation": "v. 使熟悉，使了解",
+      "order": 27,
+      "pack_id": "P002"
+    },
+    {
+      "word": "momentary",
+      "translation": "片刻的，短暂的；随时可能发生的",
+      "order": 28,
+      "pack_id": "P002"
+    },
+    {
+      "word": "astonish",
+      "translation": "使吃惊，使惊讶；使震惊",
+      "order": 29,
+      "pack_id": "P002"
+    },
+    {
+      "word": "indifference",
+      "translation": "不感兴趣，漠不关心；冷淡，无动于衷；不重要，无足轻重",
+      "order": 30,
+      "pack_id": "P002"
+    },
+    {
+      "word": "lean",
+      "translation": "v. 倾斜；倚靠；倾向于；adj. 瘦而健康的；瘦的（肉）；不景气的",
+      "order": 31,
+      "pack_id": "P002"
+    },
+    {
+      "word": "generator",
+      "translation": "n. 发电机；产生者；电力公司；母点，母线，母面",
+      "order": 32,
+      "pack_id": "P002"
+    },
+    {
+      "word": "surname",
+      "translation": "n. 姓；v. 给······姓氏",
+      "order": 33,
+      "pack_id": "P002"
+    },
+    {
+      "word": "surge",
+      "translation": "n. 激增，猛增；奔涌，汹涌；涌起，翻涌；蜂拥；电涌 v. 激增；汹涌；蜂拥",
+      "order": 34,
+      "pack_id": "P002"
+    },
+    {
+      "word": "confidential",
+      "translation": "机密的，保密的；受信任的，委以机密的；神秘的，隐秘的",
+      "order": 35,
+      "pack_id": "P002"
+    },
+    {
+      "word": "temper",
+      "translation": "脾气，情绪；坏脾气，暴躁；怒气；心情；特征，氛围",
+      "order": 36,
+      "pack_id": "P002"
+    },
+    {
+      "word": "tissue",
+      "translation": "纸巾，面巾纸；组织；薄纸，绵纸；薄纱，薄织物",
+      "order": 37,
+      "pack_id": "P002"
+    },
+    {
+      "word": "italic",
+      "translation": "斜体的；斜体字；仿意大利古书写体的",
+      "order": 38,
+      "pack_id": "P002"
+    },
+    {
+      "word": "dubious",
+      "translation": "可疑的，靠不住的；有疑虑的，半信半疑的；（名声等）不光彩的；质量不佳的",
+      "order": 39,
+      "pack_id": "P002"
+    },
+    {
+      "word": "Fahrenheit",
+      "translation": "华氏的；华氏温标；华氏温度计",
+      "order": 40,
+      "pack_id": "P002"
+    }
+  ],
+  "packs": [
+    {
+      "pack_id": "P001",
+      "words": [
+        {
+          "word": "immerse",
+          "translation": "v. 使沉浸（于）；使深陷（于）；使浸没（于液体中）",
+          "order": 1,
+          "pack_id": "P001"
+        },
+        {
+          "word": "apt",
+          "translation": "易于……的，有……倾向的；恰当的，适宜的；善学的，聪明的",
+          "order": 2,
+          "pack_id": "P001"
+        },
+        {
+          "word": "moist",
+          "translation": "微湿的，潮润的；潮湿的（空气、地区）；含泪的，泪汪汪的",
+          "order": 3,
+          "pack_id": "P001"
+        },
+        {
+          "word": "compress",
+          "translation": "v. 压紧，压缩；精简，浓缩；压缩（文件）；缩短（时间）\nn. （止血、减痛等的）敷布，压布",
+          "order": 4,
+          "pack_id": "P001"
+        },
+        {
+          "word": "sentiment",
+          "translation": "观点，看法；情绪，情感；多愁善感",
+          "order": 5,
+          "pack_id": "P001"
+        },
+        {
+          "word": "bewilder",
+          "translation": "使迷惑，使糊涂；使不知所措",
+          "order": 6,
+          "pack_id": "P001"
+        },
+        {
+          "word": "aviation",
+          "translation": "航空，飞行（术）；航空工业，飞机工业",
+          "order": 7,
+          "pack_id": "P001"
+        },
+        {
+          "word": "ultimate",
+          "translation": "最终的，最后的；最根本的，最基础的；极限的，终极的；首要的，决定性的",
+          "order": 8,
+          "pack_id": "P001"
+        },
+        {
+          "word": "cocaine",
+          "translation": "可卡因，古柯碱",
+          "order": 9,
+          "pack_id": "P001"
+        },
+        {
+          "word": "installment",
+          "translation": "分期付款；（分期连载的）一部分；（安装）安装；（就职）就职",
+          "order": 10,
+          "pack_id": "P001"
+        },
+        {
+          "word": "corridor",
+          "translation": "n. 走廊，过道（建筑物或火车内）；走廊地带，狭长地带（地理）；通道，走廊（外交、地理）",
+          "order": 11,
+          "pack_id": "P001"
+        },
+        {
+          "word": "acupuncture",
+          "translation": "n. 针灸，针刺疗法；v. 对……施行针刺疗法",
+          "order": 12,
+          "pack_id": "P001"
+        },
+        {
+          "word": "slump",
+          "translation": "v. （价格、价值、数量等）骤降，猛跌；惨败；（因无力站立而）倒下，倚靠；（肩或脑袋）耷拉",
+          "order": 13,
+          "pack_id": "P001"
+        },
+        {
+          "word": "sacred",
+          "translation": "神圣的，宗教的；受尊重的，不可侵犯的",
+          "order": 14,
+          "pack_id": "P001"
+        },
+        {
+          "word": "amateur",
+          "translation": "n. 业余爱好者；生手，外行; adj. 非专业的，业余爱好的；不熟练的",
+          "order": 15,
+          "pack_id": "P001"
+        },
+        {
+          "word": "appetite",
+          "translation": "食欲，胃口；欲望，爱好",
+          "order": 16,
+          "pack_id": "P001"
+        },
+        {
+          "word": "commerce",
+          "translation": "n. 贸易，商业；<旧>社交，交往；<旧>性交",
+          "order": 17,
+          "pack_id": "P001"
+        },
+        {
+          "word": "testify",
+          "translation": "作证；证明，证实；见证（上帝存在）",
+          "order": 18,
+          "pack_id": "P001"
+        },
+        {
+          "word": "ratio",
+          "translation": "比率，比例",
+          "order": 19,
+          "pack_id": "P001"
+        },
+        {
+          "word": "tube",
+          "translation": "管，管子；软管；管状物；管状器官；地铁（英）",
+          "order": 20,
+          "pack_id": "P001"
+        }
+      ],
+      "segments": [
+        {
+          "title": "办公室：从复杂材料抓住主线",
+          "content_markup": "早上到办公室，我决定 {{immerse|使沉浸}} myself in the most important report，专心研究最重要的报告。一忙起来 I am {{apt|容易……的}} to miss details，容易漏掉细节，所以会先把几十页内容{{compress|压缩、精简}}成几个真正需要判断的问题。看到不同部门的市场{{sentiment|情绪、看法}}完全相反，数据口径又很绕，这些差异一开始会 {{bewilder|使迷惑}} me，让我不知所措；后来只抓住{{ratio|比例}}变化和项目的{{ultimate|最终的}}目标，思路就清楚了。",
+          "display_content": "早上到办公室，我决定 immerse（使沉浸） myself in the most important report，专心研究最重要的报告。一忙起来 I am apt（容易……的） to miss details，容易漏掉细节，所以会先把几十页内容compress（压缩、精简）成几个真正需要判断的问题。看到不同部门的市场sentiment（情绪、看法）完全相反，数据口径又很绕，这些差异一开始会 bewilder（使迷惑） me，让我不知所措；后来只抓住ratio（比例）变化和项目的ultimate（最终的）目标，思路就清楚了。",
+          "speech_content": "早上到办公室，我决定 immerse myself in the most important report，专心研究最重要的报告。一忙起来 I am apt to miss details，容易漏掉细节，所以会先把几十页内容compress成几个真正需要判断的问题。看到不同部门的市场sentiment完全相反，数据口径又很绕，这些差异一开始会 bewilder me，让我不知所措；后来只抓住ratio变化和项目的ultimate目标，思路就清楚了。"
+        },
+        {
+          "title": "医疗机构：把词挂到熟悉场景",
+          "content_markup": "中午去医疗机构开会，我沿着长长的{{corridor|走廊}}走到诊室，门口介绍{{acupuncture|针灸}}服务。治疗区里能看到细细的{{tube|管子}}，空气有点{{moist|潮湿的}}。忙了一上午，我几乎没什么{{appetite|胃口}}。看着医务人员反复核对患者信息，我会觉得隐私保护是一条近乎{{sacred|不可侵犯的}}底线。",
+          "display_content": "中午去医疗机构开会，我沿着长长的corridor（走廊）走到诊室，门口介绍acupuncture（针灸）服务。治疗区里能看到细细的tube（管子），空气有点moist（潮湿的）。忙了一上午，我几乎没什么appetite（胃口）。看着医务人员反复核对患者信息，我会觉得隐私保护是一条近乎sacred（不可侵犯的）底线。",
+          "speech_content": "中午去医疗机构开会，我沿着长长的corridor走到诊室，门口介绍acupuncture服务。治疗区里能看到细细的tube，空气有点moist。忙了一上午，我几乎没什么appetite。看着医务人员反复核对患者信息，我会觉得隐私保护是一条近乎sacred底线。"
+        },
+        {
+          "title": "晚间阅读：新闻与消费",
+          "content_markup": "晚上看新闻，一篇{{aviation|航空业}}报道提到需求走弱后部分航线的 passenger numbers {{slump|骤降}}，即客流量骤降，也影响了相关国际{{commerce|贸易}}。另一则案件里警方查获{{cocaine|可卡因}}，证人需要出庭{{testify|作证}}。这些内容离我的日常较远，我很快划过去看相机；作为{{amateur|业余爱好者}}，即使商家允许先支付 the first {{installment|一期付款}}，即第一期款项，我也会先判断自己是不是真的需要。",
+          "display_content": "晚上看新闻，一篇aviation（航空业）报道提到需求走弱后部分航线的 passenger numbers slump（骤降），即客流量骤降，也影响了相关国际commerce（贸易）。另一则案件里警方查获cocaine（可卡因），证人需要出庭testify（作证）。这些内容离我的日常较远，我很快划过去看相机；作为amateur（业余爱好者），即使商家允许先支付 the first installment（一期付款），即第一期款项，我也会先判断自己是不是真的需要。",
+          "speech_content": "晚上看新闻，一篇aviation报道提到需求走弱后部分航线的 passenger numbers slump，即客流量骤降，也影响了相关国际commerce。另一则案件里警方查获cocaine，证人需要出庭testify。这些内容离我的日常较远，我很快划过去看相机；作为amateur，即使商家允许先支付 the first installment，即第一期款项，我也会先判断自己是不是真的需要。"
+        }
+      ],
+      "audio": "audio/P001.m4a"
+    },
+    {
+      "pack_id": "P002",
+      "words": [
+        {
+          "word": "longitude",
+          "translation": "经度；经线",
+          "order": 21,
+          "pack_id": "P002"
+        },
+        {
+          "word": "pine",
+          "translation": "松树；渴望，思念",
+          "order": 22,
+          "pack_id": "P002"
+        },
+        {
+          "word": "lever",
+          "translation": "杠杆；手段",
+          "order": 23,
+          "pack_id": "P002"
+        },
+        {
+          "word": "proportionate",
+          "translation": "adj. 成比例的；相称的；适当的；vt. 使成比例；使相称",
+          "order": 24,
+          "pack_id": "P002"
+        },
+        {
+          "word": "curse",
+          "translation": "n. 骂人话，咒骂语；咒语，魔咒；祸根，祸因；月经，例假（the curse）；v. 诅咒，咒骂",
+          "order": 25,
+          "pack_id": "P002"
+        },
+        {
+          "word": "makeup",
+          "translation": "n. 组成，构造；化妆品；<美>补考；天性，性格；补给，补充",
+          "order": 26,
+          "pack_id": "P002"
+        },
+        {
+          "word": "acquaint",
+          "translation": "v. 使熟悉，使了解",
+          "order": 27,
+          "pack_id": "P002"
+        },
+        {
+          "word": "momentary",
+          "translation": "片刻的，短暂的；随时可能发生的",
+          "order": 28,
+          "pack_id": "P002"
+        },
+        {
+          "word": "astonish",
+          "translation": "使吃惊，使惊讶；使震惊",
+          "order": 29,
+          "pack_id": "P002"
+        },
+        {
+          "word": "indifference",
+          "translation": "不感兴趣，漠不关心；冷淡，无动于衷；不重要，无足轻重",
+          "order": 30,
+          "pack_id": "P002"
+        },
+        {
+          "word": "lean",
+          "translation": "v. 倾斜；倚靠；倾向于；adj. 瘦而健康的；瘦的（肉）；不景气的",
+          "order": 31,
+          "pack_id": "P002"
+        },
+        {
+          "word": "generator",
+          "translation": "n. 发电机；产生者；电力公司；母点，母线，母面",
+          "order": 32,
+          "pack_id": "P002"
+        },
+        {
+          "word": "surname",
+          "translation": "n. 姓；v. 给······姓氏",
+          "order": 33,
+          "pack_id": "P002"
+        },
+        {
+          "word": "surge",
+          "translation": "n. 激增，猛增；奔涌，汹涌；涌起，翻涌；蜂拥；电涌 v. 激增；汹涌；蜂拥",
+          "order": 34,
+          "pack_id": "P002"
+        },
+        {
+          "word": "confidential",
+          "translation": "机密的，保密的；受信任的，委以机密的；神秘的，隐秘的",
+          "order": 35,
+          "pack_id": "P002"
+        },
+        {
+          "word": "temper",
+          "translation": "脾气，情绪；坏脾气，暴躁；怒气；心情；特征，氛围",
+          "order": 36,
+          "pack_id": "P002"
+        },
+        {
+          "word": "tissue",
+          "translation": "纸巾，面巾纸；组织；薄纸，绵纸；薄纱，薄织物",
+          "order": 37,
+          "pack_id": "P002"
+        },
+        {
+          "word": "italic",
+          "translation": "斜体的；斜体字；仿意大利古书写体的",
+          "order": 38,
+          "pack_id": "P002"
+        },
+        {
+          "word": "dubious",
+          "translation": "可疑的，靠不住的；有疑虑的，半信半疑的；（名声等）不光彩的；质量不佳的",
+          "order": 39,
+          "pack_id": "P002"
+        },
+        {
+          "word": "Fahrenheit",
+          "translation": "华氏的；华氏温标；华氏温度计",
+          "order": 40,
+          "pack_id": "P002"
+        }
+      ],
+      "segments": [
+        {
+          "title": "现场检查：设备与风险",
+          "content_markup": "去做现场检查前，我会先 {{acquaint|使熟悉}} myself with the project background，熟悉项目背景。到了机房，先看备用{{generator|发电机}}是否能正常启动，再看负荷突然{{surge|激增}}时会不会出现问题。有一次灯光出现了 a {{momentary|短暂的}} flicker，即短暂的闪烁，但我还是让技术人员查清原因。面对设备故障，找到真正能撬动问题的{{lever|杠杆、手段}}比一味增加投入更重要；整改成本也应该 be {{proportionate|相称的}} to the risk，与风险相称。",
+          "display_content": "去做现场检查前，我会先 acquaint（使熟悉） myself with the project background，熟悉项目背景。到了机房，先看备用generator（发电机）是否能正常启动，再看负荷突然surge（激增）时会不会出现问题。有一次灯光出现了 a momentary（短暂的） flicker，即短暂的闪烁，但我还是让技术人员查清原因。面对设备故障，找到真正能撬动问题的lever（杠杆、手段）比一味增加投入更重要；整改成本也应该 be proportionate（相称的） to the risk，与风险相称。",
+          "speech_content": "去做现场检查前，我会先 acquaint myself with the project background，熟悉项目背景。到了机房，先看备用generator是否能正常启动，再看负荷突然surge时会不会出现问题。有一次灯光出现了 a momentary flicker，即短暂的闪烁，但我还是让技术人员查清原因。面对设备故障，找到真正能撬动问题的lever比一味增加投入更重要；整改成本也应该 be proportionate to the risk，与风险相称。"
+        },
+        {
+          "title": "会议室：材料、数据与情绪",
+          "content_markup": "回到会议室，名单上只写了一个人的{{surname|姓氏}}，我先确认身份；报告重点用了{{italic|斜体}}，但真正需要核查的是几项{{dubious|可疑的}}数字。材料属于{{confidential|保密的}}信息，不能为了方便随意转发。有人对明显的问题表现出{{indifference|漠不关心}}，另一个人差点 lose his {{temper|脾气}}。我 {{lean|倚靠}} back in my chair，靠向椅背，拿张{{tissue|纸巾}}擦了擦汗，还是决定回到原始记录。",
+          "display_content": "回到会议室，名单上只写了一个人的surname（姓氏），我先确认身份；报告重点用了italic（斜体），但真正需要核查的是几项dubious（可疑的）数字。材料属于confidential（保密的）信息，不能为了方便随意转发。有人对明显的问题表现出indifference（漠不关心），另一个人差点 lose his temper（脾气）。我 lean（倚靠） back in my chair，靠向椅背，拿张tissue（纸巾）擦了擦汗，还是决定回到原始记录。",
+          "speech_content": "回到会议室，名单上只写了一个人的surname，我先确认身份；报告重点用了italic，但真正需要核查的是几项dubious数字。材料属于confidential信息，不能为了方便随意转发。有人对明显的问题表现出indifference，另一个人差点 lose his temper。我 lean back in my chair，靠向椅背，拿张tissue擦了擦汗，还是决定回到原始记录。"
+        },
+        {
+          "title": "周末出行：地图与选择",
+          "content_markup": "周末看地图规划出行时，我会顺手看目的地的{{longitude|经度}}；如果路线穿过{{pine|松树}}林，就更想去走走。天气软件偶尔只显示{{Fahrenheit|华氏温度}}，还得先换算。有些地方的美景 can {{astonish|使吃惊}} visitors，让游客惊叹；糟糕的交通却成了一种{{curse|祸根}}。选酒店时我也会看整体{{makeup|构成、配置}}，而不是只看一张漂亮照片。",
+          "display_content": "周末看地图规划出行时，我会顺手看目的地的longitude（经度）；如果路线穿过pine（松树）林，就更想去走走。天气软件偶尔只显示Fahrenheit（华氏温度），还得先换算。有些地方的美景 can astonish（使吃惊） visitors，让游客惊叹；糟糕的交通却成了一种curse（祸根）。选酒店时我也会看整体makeup（构成、配置），而不是只看一张漂亮照片。",
+          "speech_content": "周末看地图规划出行时，我会顺手看目的地的longitude；如果路线穿过pine林，就更想去走走。天气软件偶尔只显示Fahrenheit，还得先换算。有些地方的美景 can astonish visitors，让游客惊叹；糟糕的交通却成了一种curse。选酒店时我也会看整体makeup，而不是只看一张漂亮照片。"
+        }
+      ],
+      "audio": "audio/P002.m4a"
+    }
+  ]
+}
