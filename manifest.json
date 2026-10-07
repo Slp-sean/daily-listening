@@ -1,8 +1,26 @@
 {
-  "schema_version": 1,
+  "project_id": "bbdc_weak_202610",
+  "study_date": "2026-10-07",
+  "session_id": "bbdc_weak_202610_2026-10-07",
+  "queue_snapshot_hash": "68db885bf81fcdb4",
+  "content_hash": "a1136cf88185f644a2d50ea6b15c2d4bdd67dadb2ff22f50e8dff09fa6a37eaa",
+  "schema_version": 2,
   "date": "2026-10-07",
-  "path": "2026-10-07/",
-  "preview": true,
-  "content_hash": "cd3070c058b1bee563d7349fa1ced42fd7af91168f7572728d8a4341c8f2e0f1",
-  "published_at": "2026-10-07T14:12:34.562794"
+  "path": "2026-10-07/a1136cf88185f644a2d50ea6b15c2d4bdd67dadb2ff22f50e8dff09fa6a37eaa/",
+  "preview": false,
+  "artifact_hash": "3c44f6d64329fb66a661c71ad5701d4ce557485d25de6ac8b646ce8aeebef933",
+  "groups": [
+    {
+      "group_id": "G01",
+      "group_signature": "sig_2026-10-07_g01_5b35d6f0135b535f",
+      "active_version": 1,
+      "content_hash": "eabd287e72cd3a0af53b0e8414f37be7534b30ff946e9619bf662698d1917fc9"
+    },
+    {
+      "group_id": "G02",
+      "group_signature": "sig_2026-10-07_g02_e90c4b2320fceddb",
+      "active_version": 1,
+      "content_hash": "da9cd15008c4807c0dd45323016ea5f1b8c6bf35131a022fb44afe594f31b742"
+    }
+  ]
 }
