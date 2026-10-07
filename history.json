@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "entries": [
+    {
+      "project_id": "bbdc_weak_202610",
+      "study_date": "2026-10-07",
+      "session_id": "bbdc_weak_202610_2026-10-07",
+      "queue_snapshot_hash": "68db885bf81fcdb4",
+      "content_hash": "a1136cf88185f644a2d50ea6b15c2d4bdd67dadb2ff22f50e8dff09fa6a37eaa",
+      "schema_version": 2,
+      "date": "2026-10-07",
+      "path": "2026-10-07/a1136cf88185f644a2d50ea6b15c2d4bdd67dadb2ff22f50e8dff09fa6a37eaa/",
+      "preview": false,
+      "artifact_hash": "3c44f6d64329fb66a661c71ad5701d4ce557485d25de6ac8b646ce8aeebef933",
+      "groups": [
+        {
+          "group_id": "G01",
+          "group_signature": "sig_2026-10-07_g01_5b35d6f0135b535f",
+          "active_version": 1,
+          "content_hash": "eabd287e72cd3a0af53b0e8414f37be7534b30ff946e9619bf662698d1917fc9"
+        },
+        {
+          "group_id": "G02",
+          "group_signature": "sig_2026-10-07_g02_e90c4b2320fceddb",
+          "active_version": 1,
+          "content_hash": "da9cd15008c4807c0dd45323016ea5f1b8c6bf35131a022fb44afe594f31b742"
+        }
+      ],
+      "word_count": 50,
+      "group_count": 2
+    },
+    {
+      "project_id": "bbdc_weak_202610",
+      "study_date": "2026-10-06",
+      "session_id": "bbdc_weak_202610_2026-10-06",
+      "queue_snapshot_hash": "6444a49c634d956c",
+      "content_hash": "f74c5e8cbb646586fd59ef0b85671dec37166341127fa0ee1adb2a6d4114465d",
+      "schema_version": 2,
+      "date": "2026-10-06",
+      "path": "2026-10-06/f74c5e8cbb646586fd59ef0b85671dec37166341127fa0ee1adb2a6d4114465d/",
+      "preview": false,
+      "word_count": 50,
+      "group_count": 2,
+      "artifact_hash": "11d3a842d686c738e172d8ff30105c6a515752ef757f8a2b5609ed6819043023",
+      "groups": [
+        {
+          "group_id": "G01",
+          "group_signature": "sig_2026-10-06_g01_7ba3ce616c59abeb",
+          "active_version": 1,
+          "content_hash": "bb10830088b24e44c3215bfc645f96148c953e65015c6804d599eee01b7929ab"
+        },
+        {
+          "group_id": "G02",
+          "group_signature": "sig_2026-10-06_g02_8e74ff776a933903",
+          "active_version": 1,
+          "content_hash": "189a7ad3e9edeeb66fe61d88f99766001678289ab2243ce8c06bee11d8cf17c8"
+        }
+      ]
+    }
+  ],
+  "previews": [
+    {
+      "date": "2026-10-07",
+      "path": "2026-10-07/",
+      "preview": true,
+      "word_count": 40
+    }
+  ]
+}
