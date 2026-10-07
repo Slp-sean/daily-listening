@@ -1,0 +1,768 @@
+{
+  "project_id": "bbdc_weak_202610",
+  "study_date": "2026-10-07",
+  "session_id": "bbdc_weak_202610_2026-10-07",
+  "queue_snapshot_hash": "68db885bf81fcdb4",
+  "groups": [
+    {
+      "project_id": "bbdc_weak_202610",
+      "study_date": "2026-10-07",
+      "session_id": "bbdc_weak_202610_2026-10-07",
+      "queue_snapshot_hash": "68db885bf81fcdb4",
+      "group_id": "G01",
+      "group_signature": "sig_2026-10-07_g01_5b35d6f0135b535f",
+      "active_version": 1,
+      "words": [
+        {
+          "word": "immerse",
+          "translation": "v. 使沉浸（于）；使深陷（于）；使浸没（于液体中）",
+          "order": 1
+        },
+        {
+          "word": "apt",
+          "translation": "易于……的，有……倾向的；恰当的，适宜的；善学的，聪明的",
+          "order": 2
+        },
+        {
+          "word": "moist",
+          "translation": "微湿的，潮润的；潮湿的（空气、地区）；含泪的，泪汪汪的",
+          "order": 3
+        },
+        {
+          "word": "compress",
+          "translation": "v. 压紧，压缩；精简，浓缩；压缩（文件）；缩短（时间）\nn. （止血、减痛等的）敷布，压布",
+          "order": 4
+        },
+        {
+          "word": "sentiment",
+          "translation": "观点，看法；情绪，情感；多愁善感",
+          "order": 5
+        },
+        {
+          "word": "bewilder",
+          "translation": "使迷惑，使糊涂；使不知所措",
+          "order": 6
+        },
+        {
+          "word": "aviation",
+          "translation": "航空，飞行（术）；航空工业，飞机工业",
+          "order": 7
+        },
+        {
+          "word": "ultimate",
+          "translation": "最终的，最后的；最根本的，最基础的；极限的，终极的；首要的，决定性的",
+          "order": 8
+        },
+        {
+          "word": "cocaine",
+          "translation": "可卡因，古柯碱",
+          "order": 9
+        },
+        {
+          "word": "installment",
+          "translation": "分期付款；（分期连载的）一部分；（安装）安装；（就职）就职",
+          "order": 10
+        },
+        {
+          "word": "corridor",
+          "translation": "n. 走廊，过道（建筑物或火车内）；走廊地带，狭长地带（地理）；通道，走廊（外交、地理）",
+          "order": 11
+        },
+        {
+          "word": "acupuncture",
+          "translation": "n. 针灸，针刺疗法；v. 对……施行针刺疗法",
+          "order": 12
+        },
+        {
+          "word": "slump",
+          "translation": "v. （价格、价值、数量等）骤降，猛跌；惨败；（因无力站立而）倒下，倚靠；（肩或脑袋）耷拉",
+          "order": 13
+        },
+        {
+          "word": "sacred",
+          "translation": "神圣的，宗教的；受尊重的，不可侵犯的",
+          "order": 14
+        },
+        {
+          "word": "amateur",
+          "translation": "n. 业余爱好者；生手，外行; adj. 非专业的，业余爱好的；不熟练的",
+          "order": 15
+        },
+        {
+          "word": "appetite",
+          "translation": "食欲，胃口；欲望，爱好",
+          "order": 16
+        },
+        {
+          "word": "commerce",
+          "translation": "n. 贸易，商业；<旧>社交，交往；<旧>性交",
+          "order": 17
+        },
+        {
+          "word": "testify",
+          "translation": "作证；证明，证实；见证（上帝存在）",
+          "order": 18
+        },
+        {
+          "word": "ratio",
+          "translation": "比率，比例",
+          "order": 19
+        },
+        {
+          "word": "tube",
+          "translation": "管，管子；软管；管状物；管状器官；地铁（英）",
+          "order": 20
+        },
+        {
+          "word": "longitude",
+          "translation": "经度；经线",
+          "order": 21
+        },
+        {
+          "word": "pine",
+          "translation": "松树；渴望，思念",
+          "order": 22
+        },
+        {
+          "word": "lever",
+          "translation": "杠杆；手段",
+          "order": 23
+        },
+        {
+          "word": "proportionate",
+          "translation": "adj. 成比例的；相称的；适当的；vt. 使成比例；使相称",
+          "order": 24
+        },
+        {
+          "word": "curse",
+          "translation": "n. 骂人话，咒骂语；咒语，魔咒；祸根，祸因；月经，例假（the curse）；v. 诅咒，咒骂",
+          "order": 25
+        }
+      ],
+      "segments": [
+        {
+          "segment_no": 1,
+          "title": "材料压缩与判断",
+          "content_markup": "做年度预算前，我先让自己{{immerse|沉浸}}在原始数据里，再把几十张表{{compress|压缩}}成三页。不同单位的{{sentiment|看法}}不一，初看足以{{bewilder|使困惑}}人；一旦算清投入产出的{{ratio|比例}}，{{ultimate|最终的}}目标就明确了。预算只是一个{{lever|手段}}，资源投入还要与风险保持{{proportionate|相称的}}。人在赶时间时尤其{{apt|容易}}受单个异常值影响，所以最后再核一遍。",
+          "display_content": "做年度预算前，我先让自己immerse（沉浸）在原始数据里，再把几十张表compress（压缩）成三页。不同单位的sentiment（看法）不一，初看足以bewilder（使困惑）人；一旦算清投入产出的ratio（比例），ultimate（最终的）目标就明确了。预算只是一个lever（手段），资源投入还要与风险保持proportionate（相称的）。人在赶时间时尤其apt（容易）受单个异常值影响，所以最后再核一遍。",
+          "speech_content": "做年度预算前，我先让自己immerse在原始数据里，再把几十张表compress成三页。不同单位的sentiment不一，初看足以bewilder人；一旦算清投入产出的ratio，ultimate目标就明确了。预算只是一个lever，资源投入还要与风险保持proportionate。人在赶时间时尤其apt受单个异常值影响，所以最后再核一遍。",
+          "covered_words": [
+            "immerse",
+            "compress",
+            "sentiment",
+            "bewilder",
+            "ratio",
+            "ultimate",
+            "lever",
+            "proportionate",
+            "apt"
+          ]
+        },
+        {
+          "segment_no": 2,
+          "title": "门诊现场",
+          "content_markup": "午后经过门诊{{corridor|走廊}}，雨天让空气略显{{moist|潮湿}}。治疗区正在做{{acupuncture|针灸}}，设备旁接着几根细{{tube|管子}}。忙到晚饭前，我几乎没什么{{appetite|食欲}}。医学判断有专业门槛，不能让{{amateur|外行}}凭直觉下结论；患者隐私更是{{sacred|不可侵犯的}}底线。",
+          "display_content": "午后经过门诊corridor（走廊），雨天让空气略显moist（潮湿）。治疗区正在做acupuncture（针灸），设备旁接着几根细tube（管子）。忙到晚饭前，我几乎没什么appetite（食欲）。医学判断有专业门槛，不能让amateur（外行）凭直觉下结论；患者隐私更是sacred（不可侵犯的）底线。",
+          "speech_content": "午后经过门诊corridor，雨天让空气略显moist。治疗区正在做acupuncture，设备旁接着几根细tube。忙到晚饭前，我几乎没什么appetite。医学判断有专业门槛，不能让amateur凭直觉下结论；患者隐私更是sacred底线。",
+          "covered_words": [
+            "corridor",
+            "moist",
+            "acupuncture",
+            "tube",
+            "appetite",
+            "amateur",
+            "sacred"
+          ]
+        },
+        {
+          "segment_no": 3,
+          "title": "行业与案件",
+          "content_markup": "一份关于{{aviation|航空业}}的简报显示，客流减少使部分航线收入继续{{slump|骤降}}，相关跨境{{commerce|贸易}}也受到牵连。另一则案件查获{{cocaine|可卡因}}，关键证人随后出庭{{testify|作证}}。",
+          "display_content": "一份关于aviation（航空业）的简报显示，客流减少使部分航线收入继续slump（骤降），相关跨境commerce（贸易）也受到牵连。另一则案件查获cocaine（可卡因），关键证人随后出庭testify（作证）。",
+          "speech_content": "一份关于aviation的简报显示，客流减少使部分航线收入继续slump，相关跨境commerce也受到牵连。另一则案件查获cocaine，关键证人随后出庭testify。",
+          "covered_words": [
+            "aviation",
+            "slump",
+            "commerce",
+            "cocaine",
+            "testify"
+          ]
+        },
+        {
+          "segment_no": 4,
+          "title": "路线与支付",
+          "content_markup": "查看徒步路线时，我先核对目的地{{longitude|经度}}，确认营地在一片{{pine|松林}}附近。酒店支持{{installment|分期付款}}，但如果因此超支，便利反而可能变成长期{{curse|负担}}。",
+          "display_content": "查看徒步路线时，我先核对目的地longitude（经度），确认营地在一片pine（松林）附近。酒店支持installment（分期付款），但如果因此超支，便利反而可能变成长期curse（负担）。",
+          "speech_content": "查看徒步路线时，我先核对目的地longitude，确认营地在一片pine附近。酒店支持installment，但如果因此超支，便利反而可能变成长期curse。",
+          "covered_words": [
+            "longitude",
+            "pine",
+            "installment",
+            "curse"
+          ]
+        }
+      ],
+      "speech_content": "做年度预算前，我先让自己immerse在原始数据里，再把几十张表compress成三页。不同单位的sentiment不一，初看足以bewilder人；一旦算清投入产出的ratio，ultimate目标就明确了。预算只是一个lever，资源投入还要与风险保持proportionate。人在赶时间时尤其apt受单个异常值影响，所以最后再核一遍。\n午后经过门诊corridor，雨天让空气略显moist。治疗区正在做acupuncture，设备旁接着几根细tube。忙到晚饭前，我几乎没什么appetite。医学判断有专业门槛，不能让amateur凭直觉下结论；患者隐私更是sacred底线。\n一份关于aviation的简报显示，客流减少使部分航线收入继续slump，相关跨境commerce也受到牵连。另一则案件查获cocaine，关键证人随后出庭testify。\n查看徒步路线时，我先核对目的地longitude，确认营地在一片pine附近。酒店支持installment，但如果因此超支，便利反而可能变成长期curse。",
+      "content_hash": "eabd287e72cd3a0af53b0e8414f37be7534b30ff946e9619bf662698d1917fc9",
+      "audio": "audio/G01.m4a"
+    },
+    {
+      "project_id": "bbdc_weak_202610",
+      "study_date": "2026-10-07",
+      "session_id": "bbdc_weak_202610_2026-10-07",
+      "queue_snapshot_hash": "68db885bf81fcdb4",
+      "group_id": "G02",
+      "group_signature": "sig_2026-10-07_g02_e90c4b2320fceddb",
+      "active_version": 1,
+      "words": [
+        {
+          "word": "makeup",
+          "translation": "n. 组成，构造；化妆品；<美>补考；天性，性格；补给，补充",
+          "order": 1
+        },
+        {
+          "word": "acquaint",
+          "translation": "v. 使熟悉，使了解",
+          "order": 2
+        },
+        {
+          "word": "momentary",
+          "translation": "片刻的，短暂的；随时可能发生的",
+          "order": 3
+        },
+        {
+          "word": "astonish",
+          "translation": "使吃惊，使惊讶；使震惊",
+          "order": 4
+        },
+        {
+          "word": "indifference",
+          "translation": "不感兴趣，漠不关心；冷淡，无动于衷；不重要，无足轻重",
+          "order": 5
+        },
+        {
+          "word": "lean",
+          "translation": "v. 倾斜；倚靠；倾向于；adj. 瘦而健康的；瘦的（肉）；不景气的",
+          "order": 6
+        },
+        {
+          "word": "generator",
+          "translation": "n. 发电机；产生者；电力公司；母点，母线，母面",
+          "order": 7
+        },
+        {
+          "word": "surname",
+          "translation": "n. 姓；v. 给······姓氏",
+          "order": 8
+        },
+        {
+          "word": "surge",
+          "translation": "n. 激增，猛增；奔涌，汹涌；涌起，翻涌；蜂拥；电涌 v. 激增；汹涌；蜂拥",
+          "order": 9
+        },
+        {
+          "word": "confidential",
+          "translation": "机密的，保密的；受信任的，委以机密的；神秘的，隐秘的",
+          "order": 10
+        },
+        {
+          "word": "temper",
+          "translation": "脾气，情绪；坏脾气，暴躁；怒气；心情；特征，氛围",
+          "order": 11
+        },
+        {
+          "word": "tissue",
+          "translation": "纸巾，面巾纸；组织；薄纸，绵纸；薄纱，薄织物",
+          "order": 12
+        },
+        {
+          "word": "italic",
+          "translation": "斜体的；斜体字；仿意大利古书写体的",
+          "order": 13
+        },
+        {
+          "word": "dubious",
+          "translation": "可疑的，靠不住的；有疑虑的，半信半疑的；（名声等）不光彩的；质量不佳的",
+          "order": 14
+        },
+        {
+          "word": "Fahrenheit",
+          "translation": "华氏的；华氏温标；华氏温度计",
+          "order": 15
+        },
+        {
+          "word": "wagon",
+          "translation": "n. 四轮运货车（尤指马拉的）；<英>铁路货车车厢，车皮；旅行轿车（station wagon）",
+          "order": 16
+        },
+        {
+          "word": "metropolitan",
+          "translation": "大都市的；大城市的；宗主国的；大主教；大城市人",
+          "order": 17
+        },
+        {
+          "word": "magistrate",
+          "translation": "地方法官，治安法官；文职官员",
+          "order": 18
+        },
+        {
+          "word": "overt",
+          "translation": "公开的，不隐瞒的；明显的",
+          "order": 19
+        },
+        {
+          "word": "insurgent",
+          "translation": "adj. 叛乱的；起义的；n. 叛乱者；起义者",
+          "order": 20
+        },
+        {
+          "word": "wretched",
+          "translation": "可怜的，悲惨的；讨厌的，该死的；感到不适的，不愉快的；极坏的，恶劣的",
+          "order": 21
+        },
+        {
+          "word": "symmetry",
+          "translation": "对称（性）；相似，相等；（物理、数学）对称",
+          "order": 22
+        },
+        {
+          "word": "slaughter",
+          "translation": "v. 屠宰，宰杀（动物）；n. 屠宰；（对人的）屠杀；<非正式>彻底击败，一边倒的比赛",
+          "order": 23
+        },
+        {
+          "word": "fabulous",
+          "translation": "极好的，绝妙的；非凡的，惊人的；巨大的；虚构的，传说的",
+          "order": 24
+        },
+        {
+          "word": "concise",
+          "translation": "简明的，简洁的；简练的",
+          "order": 25
+        }
+      ],
+      "segments": [
+        {
+          "segment_no": 1,
+          "title": "项目交接",
+          "content_markup": "新团队第一次开会，我先看组织图{{acquaint|了解}}各岗位，再确认人员{{makeup|构成}}。名单只保留{{surname|姓氏}}，未确认项用{{italic|斜体}}标出；其中一份报价很{{dubious|可疑}}，材料本身又属于{{confidential|机密的}}。现场有过{{momentary|短暂的}}沉默，一人表现出{{indifference|漠不关心}}，另一人的{{temper|脾气}}明显上来。我向桌前一{{lean|倾身}}，继续逐项核证。",
+          "display_content": "新团队第一次开会，我先看组织图acquaint（了解）各岗位，再确认人员makeup（构成）。名单只保留surname（姓氏），未确认项用italic（斜体）标出；其中一份报价很dubious（可疑），材料本身又属于confidential（机密的）。现场有过momentary（短暂的）沉默，一人表现出indifference（漠不关心），另一人的temper（脾气）明显上来。我向桌前一lean（倾身），继续逐项核证。",
+          "speech_content": "新团队第一次开会，我先看组织图acquaint各岗位，再确认人员makeup。名单只保留surname，未确认项用italic标出；其中一份报价很dubious，材料本身又属于confidential。现场有过momentary沉默，一人表现出indifference，另一人的temper明显上来。我向桌前一lean，继续逐项核证。",
+          "covered_words": [
+            "acquaint",
+            "makeup",
+            "surname",
+            "italic",
+            "dubious",
+            "confidential",
+            "momentary",
+            "indifference",
+            "temper",
+            "lean"
+          ]
+        },
+        {
+          "segment_no": 2,
+          "title": "城市设备",
+          "content_markup": "在一处{{metropolitan|大都市的}}机房，负荷突然{{surge|激增}}，备用{{generator|发电机}}随即启动。屏幕切到{{Fahrenheit|华氏}}读数，值班员抽了张{{tissue|纸巾}}擦汗；楼下还有一辆{{wagon|货车}}等着卸设备。",
+          "display_content": "在一处metropolitan（大都市的）机房，负荷突然surge（激增），备用generator（发电机）随即启动。屏幕切到Fahrenheit（华氏）读数，值班员抽了张tissue（纸巾）擦汗；楼下还有一辆wagon（货车）等着卸设备。",
+          "speech_content": "在一处metropolitan机房，负荷突然surge，备用generator随即启动。屏幕切到Fahrenheit读数，值班员抽了张tissue擦汗；楼下还有一辆wagon等着卸设备。",
+          "covered_words": [
+            "metropolitan",
+            "surge",
+            "generator",
+            "Fahrenheit",
+            "tissue",
+            "wagon"
+          ]
+        },
+        {
+          "segment_no": 3,
+          "title": "案件简报",
+          "content_markup": "晨间简报提到，一名{{magistrate|地方法官}}正在审理涉及{{insurgent|叛乱者}}的案件。报道区分{{overt|公开的}}支持与隐蔽资助，也记录当地{{wretched|恶劣的}}处境和一次严重{{slaughter|屠杀}}。",
+          "display_content": "晨间简报提到，一名magistrate（地方法官）正在审理涉及insurgent（叛乱者）的案件。报道区分overt（公开的）支持与隐蔽资助，也记录当地wretched（恶劣的）处境和一次严重slaughter（屠杀）。",
+          "speech_content": "晨间简报提到，一名magistrate正在审理涉及insurgent的案件。报道区分overt支持与隐蔽资助，也记录当地wretched处境和一次严重slaughter。",
+          "covered_words": [
+            "magistrate",
+            "insurgent",
+            "overt",
+            "wretched",
+            "slaughter"
+          ]
+        },
+        {
+          "segment_no": 4,
+          "title": "设计短评",
+          "content_markup": "设计说明写得很{{concise|简洁}}：版面强调{{symmetry|对称}}，整体效果相当{{fabulous|出色}}，几个细节甚至足以{{astonish|使惊讶}}第一次看到的人。",
+          "display_content": "设计说明写得很concise（简洁）：版面强调symmetry（对称），整体效果相当fabulous（出色），几个细节甚至足以astonish（使惊讶）第一次看到的人。",
+          "speech_content": "设计说明写得很concise：版面强调symmetry，整体效果相当fabulous，几个细节甚至足以astonish第一次看到的人。",
+          "covered_words": [
+            "concise",
+            "symmetry",
+            "fabulous",
+            "astonish"
+          ]
+        }
+      ],
+      "speech_content": "新团队第一次开会，我先看组织图acquaint各岗位，再确认人员makeup。名单只保留surname，未确认项用italic标出；其中一份报价很dubious，材料本身又属于confidential。现场有过momentary沉默，一人表现出indifference，另一人的temper明显上来。我向桌前一lean，继续逐项核证。\n在一处metropolitan机房，负荷突然surge，备用generator随即启动。屏幕切到Fahrenheit读数，值班员抽了张tissue擦汗；楼下还有一辆wagon等着卸设备。\n晨间简报提到，一名magistrate正在审理涉及insurgent的案件。报道区分overt支持与隐蔽资助，也记录当地wretched处境和一次严重slaughter。\n设计说明写得很concise：版面强调symmetry，整体效果相当fabulous，几个细节甚至足以astonish第一次看到的人。",
+      "content_hash": "da9cd15008c4807c0dd45323016ea5f1b8c6bf35131a022fb44afe594f31b742",
+      "audio": "audio/G02.m4a"
+    }
+  ],
+  "content_hash": "a1136cf88185f644a2d50ea6b15c2d4bdd67dadb2ff22f50e8dff09fa6a37eaa",
+  "schema_version": 2,
+  "date": "2026-10-07",
+  "preview": false,
+  "words": [
+    {
+      "word": "immerse",
+      "translation": "v. 使沉浸（于）；使深陷（于）；使浸没（于液体中）",
+      "order": 1,
+      "pack_id": "P001",
+      "group_id": "G01"
+    },
+    {
+      "word": "apt",
+      "translation": "易于……的，有……倾向的；恰当的，适宜的；善学的，聪明的",
+      "order": 2,
+      "pack_id": "P001",
+      "group_id": "G01"
+    },
+    {
+      "word": "moist",
+      "translation": "微湿的，潮润的；潮湿的（空气、地区）；含泪的，泪汪汪的",
+      "order": 3,
+      "pack_id": "P001",
+      "group_id": "G01"
+    },
+    {
+      "word": "compress",
+      "translation": "v. 压紧，压缩；精简，浓缩；压缩（文件）；缩短（时间）\nn. （止血、减痛等的）敷布，压布",
+      "order": 4,
+      "pack_id": "P001",
+      "group_id": "G01"
+    },
+    {
+      "word": "sentiment",
+      "translation": "观点，看法；情绪，情感；多愁善感",
+      "order": 5,
+      "pack_id": "P001",
+      "group_id": "G01"
+    },
+    {
+      "word": "bewilder",
+      "translation": "使迷惑，使糊涂；使不知所措",
+      "order": 6,
+      "pack_id": "P001",
+      "group_id": "G01"
+    },
+    {
+      "word": "aviation",
+      "translation": "航空，飞行（术）；航空工业，飞机工业",
+      "order": 7,
+      "pack_id": "P001",
+      "group_id": "G01"
+    },
+    {
+      "word": "ultimate",
+      "translation": "最终的，最后的；最根本的，最基础的；极限的，终极的；首要的，决定性的",
+      "order": 8,
+      "pack_id": "P001",
+      "group_id": "G01"
+    },
+    {
+      "word": "cocaine",
+      "translation": "可卡因，古柯碱",
+      "order": 9,
+      "pack_id": "P001",
+      "group_id": "G01"
+    },
+    {
+      "word": "installment",
+      "translation": "分期付款；（分期连载的）一部分；（安装）安装；（就职）就职",
+      "order": 10,
+      "pack_id": "P001",
+      "group_id": "G01"
+    },
+    {
+      "word": "corridor",
+      "translation": "n. 走廊，过道（建筑物或火车内）；走廊地带，狭长地带（地理）；通道，走廊（外交、地理）",
+      "order": 11,
+      "pack_id": "P001",
+      "group_id": "G01"
+    },
+    {
+      "word": "acupuncture",
+      "translation": "n. 针灸，针刺疗法；v. 对……施行针刺疗法",
+      "order": 12,
+      "pack_id": "P001",
+      "group_id": "G01"
+    },
+    {
+      "word": "slump",
+      "translation": "v. （价格、价值、数量等）骤降，猛跌；惨败；（因无力站立而）倒下，倚靠；（肩或脑袋）耷拉",
+      "order": 13,
+      "pack_id": "P001",
+      "group_id": "G01"
+    },
+    {
+      "word": "sacred",
+      "translation": "神圣的，宗教的；受尊重的，不可侵犯的",
+      "order": 14,
+      "pack_id": "P001",
+      "group_id": "G01"
+    },
+    {
+      "word": "amateur",
+      "translation": "n. 业余爱好者；生手，外行; adj. 非专业的，业余爱好的；不熟练的",
+      "order": 15,
+      "pack_id": "P001",
+      "group_id": "G01"
+    },
+    {
+      "word": "appetite",
+      "translation": "食欲，胃口；欲望，爱好",
+      "order": 16,
+      "pack_id": "P001",
+      "group_id": "G01"
+    },
+    {
+      "word": "commerce",
+      "translation": "n. 贸易，商业；<旧>社交，交往；<旧>性交",
+      "order": 17,
+      "pack_id": "P001",
+      "group_id": "G01"
+    },
+    {
+      "word": "testify",
+      "translation": "作证；证明，证实；见证（上帝存在）",
+      "order": 18,
+      "pack_id": "P001",
+      "group_id": "G01"
+    },
+    {
+      "word": "ratio",
+      "translation": "比率，比例",
+      "order": 19,
+      "pack_id": "P001",
+      "group_id": "G01"
+    },
+    {
+      "word": "tube",
+      "translation": "管，管子；软管；管状物；管状器官；地铁（英）",
+      "order": 20,
+      "pack_id": "P001",
+      "group_id": "G01"
+    },
+    {
+      "word": "longitude",
+      "translation": "经度；经线",
+      "order": 21,
+      "pack_id": "P002",
+      "group_id": "G01"
+    },
+    {
+      "word": "pine",
+      "translation": "松树；渴望，思念",
+      "order": 22,
+      "pack_id": "P002",
+      "group_id": "G01"
+    },
+    {
+      "word": "lever",
+      "translation": "杠杆；手段",
+      "order": 23,
+      "pack_id": "P002",
+      "group_id": "G01"
+    },
+    {
+      "word": "proportionate",
+      "translation": "adj. 成比例的；相称的；适当的；vt. 使成比例；使相称",
+      "order": 24,
+      "pack_id": "P002",
+      "group_id": "G01"
+    },
+    {
+      "word": "curse",
+      "translation": "n. 骂人话，咒骂语；咒语，魔咒；祸根，祸因；月经，例假（the curse）；v. 诅咒，咒骂",
+      "order": 25,
+      "pack_id": "P002",
+      "group_id": "G01"
+    },
+    {
+      "word": "makeup",
+      "translation": "n. 组成，构造；化妆品；<美>补考；天性，性格；补给，补充",
+      "order": 26,
+      "pack_id": "P002",
+      "group_id": "G02"
+    },
+    {
+      "word": "acquaint",
+      "translation": "v. 使熟悉，使了解",
+      "order": 27,
+      "pack_id": "P002",
+      "group_id": "G02"
+    },
+    {
+      "word": "momentary",
+      "translation": "片刻的，短暂的；随时可能发生的",
+      "order": 28,
+      "pack_id": "P002",
+      "group_id": "G02"
+    },
+    {
+      "word": "astonish",
+      "translation": "使吃惊，使惊讶；使震惊",
+      "order": 29,
+      "pack_id": "P002",
+      "group_id": "G02"
+    },
+    {
+      "word": "indifference",
+      "translation": "不感兴趣，漠不关心；冷淡，无动于衷；不重要，无足轻重",
+      "order": 30,
+      "pack_id": "P002",
+      "group_id": "G02"
+    },
+    {
+      "word": "lean",
+      "translation": "v. 倾斜；倚靠；倾向于；adj. 瘦而健康的；瘦的（肉）；不景气的",
+      "order": 31,
+      "pack_id": "P002",
+      "group_id": "G02"
+    },
+    {
+      "word": "generator",
+      "translation": "n. 发电机；产生者；电力公司；母点，母线，母面",
+      "order": 32,
+      "pack_id": "P002",
+      "group_id": "G02"
+    },
+    {
+      "word": "surname",
+      "translation": "n. 姓；v. 给······姓氏",
+      "order": 33,
+      "pack_id": "P002",
+      "group_id": "G02"
+    },
+    {
+      "word": "surge",
+      "translation": "n. 激增，猛增；奔涌，汹涌；涌起，翻涌；蜂拥；电涌 v. 激增；汹涌；蜂拥",
+      "order": 34,
+      "pack_id": "P002",
+      "group_id": "G02"
+    },
+    {
+      "word": "confidential",
+      "translation": "机密的，保密的；受信任的，委以机密的；神秘的，隐秘的",
+      "order": 35,
+      "pack_id": "P002",
+      "group_id": "G02"
+    },
+    {
+      "word": "temper",
+      "translation": "脾气，情绪；坏脾气，暴躁；怒气；心情；特征，氛围",
+      "order": 36,
+      "pack_id": "P002",
+      "group_id": "G02"
+    },
+    {
+      "word": "tissue",
+      "translation": "纸巾，面巾纸；组织；薄纸，绵纸；薄纱，薄织物",
+      "order": 37,
+      "pack_id": "P002",
+      "group_id": "G02"
+    },
+    {
+      "word": "italic",
+      "translation": "斜体的；斜体字；仿意大利古书写体的",
+      "order": 38,
+      "pack_id": "P002",
+      "group_id": "G02"
+    },
+    {
+      "word": "dubious",
+      "translation": "可疑的，靠不住的；有疑虑的，半信半疑的；（名声等）不光彩的；质量不佳的",
+      "order": 39,
+      "pack_id": "P002",
+      "group_id": "G02"
+    },
+    {
+      "word": "Fahrenheit",
+      "translation": "华氏的；华氏温标；华氏温度计",
+      "order": 40,
+      "pack_id": "P002",
+      "group_id": "G02"
+    },
+    {
+      "word": "wagon",
+      "translation": "n. 四轮运货车（尤指马拉的）；<英>铁路货车车厢，车皮；旅行轿车（station wagon）",
+      "order": 41,
+      "pack_id": "P003",
+      "group_id": "G02"
+    },
+    {
+      "word": "metropolitan",
+      "translation": "大都市的；大城市的；宗主国的；大主教；大城市人",
+      "order": 42,
+      "pack_id": "P003",
+      "group_id": "G02"
+    },
+    {
+      "word": "magistrate",
+      "translation": "地方法官，治安法官；文职官员",
+      "order": 43,
+      "pack_id": "P003",
+      "group_id": "G02"
+    },
+    {
+      "word": "overt",
+      "translation": "公开的，不隐瞒的；明显的",
+      "order": 44,
+      "pack_id": "P003",
+      "group_id": "G02"
+    },
+    {
+      "word": "insurgent",
+      "translation": "adj. 叛乱的；起义的；n. 叛乱者；起义者",
+      "order": 45,
+      "pack_id": "P003",
+      "group_id": "G02"
+    },
+    {
+      "word": "wretched",
+      "translation": "可怜的，悲惨的；讨厌的，该死的；感到不适的，不愉快的；极坏的，恶劣的",
+      "order": 46,
+      "pack_id": "P003",
+      "group_id": "G02"
+    },
+    {
+      "word": "symmetry",
+      "translation": "对称（性）；相似，相等；（物理、数学）对称",
+      "order": 47,
+      "pack_id": "P003",
+      "group_id": "G02"
+    },
+    {
+      "word": "slaughter",
+      "translation": "v. 屠宰，宰杀（动物）；n. 屠宰；（对人的）屠杀；<非正式>彻底击败，一边倒的比赛",
+      "order": 48,
+      "pack_id": "P003",
+      "group_id": "G02"
+    },
+    {
+      "word": "fabulous",
+      "translation": "极好的，绝妙的；非凡的，惊人的；巨大的；虚构的，传说的",
+      "order": 49,
+      "pack_id": "P003",
+      "group_id": "G02"
+    },
+    {
+      "word": "concise",
+      "translation": "简明的，简洁的；简练的",
+      "order": 50,
+      "pack_id": "P003",
+      "group_id": "G02"
+    }
+  ]
+}
