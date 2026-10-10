@@ -1,4 +1,4 @@
-import {hasAudio,writeAudio,readAudio} from './audio-store.mjs';
+import {hasAudio,writeAudio,readAudio,reserveStorage,reserveTts} from './audio-store.mjs';
 import {RULE_VERSION,key,addDays,shanghaiDay,applyRating,insertRecheck,selectWords,makeTask,sha,groupSignature} from './srs.mjs';
 import {validateGroup,prompt,contentHash} from './content.mjs';
 const json=(x,status=200)=>new Response(JSON.stringify(x),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
@@ -102,6 +102,27 @@ async function serveAudio(db,hash,request,bucket,storageDb=db){
  const range=request.headers.get('Range');if(range){const m=range.match(/^bytes=(\d*)-(\d*)$/);if(!m)return new Response(null,{status:416});let start=m[1]?+m[1]:Math.max(0,length-Number(m[2])),end=m[1]?(m[2]?Math.min(+m[2],length-1):length-1):length-1;if(start>end||start>=length)return new Response(null,{status:416,headers:{'Content-Range':`bytes */${length}`}});return new Response(all.slice(start,end+1),{status:206,headers:{...headers,'Content-Range':`bytes ${start}-${end}/${length}`,'Content-Length':String(end-start+1)}})}
  return new Response(all,{headers:{...headers,'Content-Length':String(length)}});
 }
+async function pronunciation(db,env,request,ctx){
+ const url=new URL(request.url),word=key(url.searchParams.get('word')||''),sentence=url.searchParams.get('sentence')==='1';
+ if(!word||word.length>80)throw err('发音词条不合法');
+ const card=parse(await read(db,'SELECT body FROM cards WHERE word=?',word));if(!card)throw err('词条不存在',404);
+ const text=sentence?card.example_sentence:card.word;
+ if(!text||text.length>400)throw err('该词条没有可用的发音文本');
+ if(!env.AUDIO||!env.AI)throw err('云端发音尚未配置',503);
+ const storageDb=(env.BUDGET||env.DB).withSession('first-primary'),hash=await sha('melotts-en-v1:'+text);
+ if(!await hasAudio(env.AUDIO,storageDb,hash)){
+  const generate=async()=>{
+   await reserveStorage(storageDb,'voice_tts_calls',1,200,new Date().toISOString().slice(0,10));
+   await reserveTts(storageDb,text);
+   const result=await env.AI.run('@cf/myshell-ai/melotts',{prompt:text,lang:'en'});
+   const bytes=result instanceof ReadableStream?new Uint8Array(await new Response(result).arrayBuffer()):result instanceof ArrayBuffer?new Uint8Array(result):result.audio?b64(result.audio):null;
+   if(!bytes||bytes.length<1000)throw err('云端发音生产失败，请重试',503);
+   await writeAudio(env.AUDIO,storageDb,hash,bytes);
+  };
+  const work=generate();ctx.waitUntil(work.catch(()=>{}));await work;
+ }
+ return serveAudio(db,hash,request,env.AUDIO,storageDb);
+}
 async function reserve(db){
  const day=shanghaiDay(),month=day.slice(0,7);
  // Reserve 0.08 RMB before each <=4k output request. Conservative peak tariff upper bound.
@@ -128,6 +149,7 @@ async function produce(env){
   // MeloTTS Chinese supports Chinese/English mixed text. One immutable audio per Group.
   const speech=segments.map(s=>s.speech_content).join('\n'),audioHash=await sha('melotts-zh-v1:'+speech);
   if(!(env.AUDIO?await hasAudio(env.AUDIO,budgetDb,audioHash):await read(db,'SELECT chunk FROM audio WHERE hash=? LIMIT 1',audioHash))){
+   await reserveTts(budgetDb,speech);
    const result=await env.AI.run('@cf/myshell-ai/melotts',{prompt:speech,lang:'zh'});
    let bytes;if(result instanceof ReadableStream)bytes=new Uint8Array(await new Response(result).arrayBuffer());else if(result instanceof ArrayBuffer)bytes=new Uint8Array(result);else if(result.audio)bytes=b64(result.audio);else throw Error('语音返回格式异常');
    if(bytes.length<1000)throw Error('云端语音为空');if(env.AUDIO){await writeAudio(env.AUDIO,budgetDb,audioHash,bytes)}else{const stmts=[];for(let n=0;n<bytes.length;n+=200000)stmts.push(db.prepare('INSERT OR IGNORE INTO audio(hash,chunk,data) VALUES(?,?,?)').bind(audioHash,n/200000,bytes.slice(n,n+200000)));await db.batch(stmts);}
@@ -144,9 +166,10 @@ export default {
    if(url.pathname.startsWith('/images/'))return json({ok:false,message:'在线版本不提供图片'},404);
    const db=env.DB.withSession('first-primary');
    if(url.pathname==='/api/session'&&request.method==='GET')return json(await snapshot(db,url.searchParams.get('date'),env.ENVIRONMENT||'preview',env.ENVIRONMENT!=='production'||env.FORMAL_ACTIVE==='true'));
+   if(url.pathname==='/api/pronunciation'&&request.method==='GET')return await pronunciation(db,env,request,ctx);
    if(url.pathname==='/api/status'&&request.method==='GET')return json({ok:true,authority:'cloud-d1',budget:await rows(db,'SELECT * FROM budget ORDER BY day DESC LIMIT 31'),jobs:await rows(db,'SELECT day,group_id,status,error FROM jobs ORDER BY day DESC LIMIT 12')});
    if(url.pathname==='/api/export'&&request.method==='GET')return json({project:await read(db,'SELECT * FROM project'),cards:await rows(db,'SELECT * FROM cards'),states:await rows(db,'SELECT * FROM states'),sessions:await rows(db,'SELECT * FROM sessions'),review_log:await rows(db,'SELECT * FROM review_log')});
-   if(url.pathname.startsWith('/api/audio/')&&request.method==='GET')return serveAudio(db,url.pathname.split('/').pop(),request,env.AUDIO,(env.BUDGET||env.DB).withSession('first-primary'));
+   if(url.pathname.startsWith('/api/audio/')&&request.method==='GET')return await serveAudio(db,url.pathname.split('/').pop(),request,env.AUDIO,(env.BUDGET||env.DB).withSession('first-primary'));
    if(['/api/rate','/api/preview','/api/playback'].includes(url.pathname)&&request.method==='POST'){
     if(env.ENVIRONMENT==='production'&&env.FORMAL_ACTIVE!=='true')throw err('正式接管尚未启用，请继续使用现有系统',503);
     if(request.headers.get('Origin')!==url.origin)throw err('请求来源不一致',403);

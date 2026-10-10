@@ -4,6 +4,11 @@ export async function reserveStorage(db,metric,amount,limit,period){
  if(!r.meta.changes)throw Error('免费音频存储额度保护已触发，现有音频和学习记录保留');
 }
 const month=()=>new Date().toISOString().slice(0,7);
+export async function reserveTts(db,text){
+ // MeloTTS: 18.63 neurons/minute. Reserve one second per character,
+ // conservatively above normal speech duration, within the daily free allocation.
+ await reserveStorage(db,'tts_neurons',Math.ceil(text.length*18.63/60)+1,9000,new Date().toISOString().slice(0,10));
+}
 export async function hasAudio(bucket,db,hash){return !!await db.prepare('SELECT hash FROM audio_objects WHERE hash=? AND status=?').bind(hash,'ready').first()}
 export async function writeAudio(bucket,db,hash,bytes){
  if(await hasAudio(bucket,db,hash))return;
