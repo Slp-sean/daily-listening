@@ -1,0 +1,8 @@
+.wrangler/
+.dev.vars*
+private/
+node_modules/
+public/images/
+public/audio/
+*-private.sql
+wrangler.jsonc

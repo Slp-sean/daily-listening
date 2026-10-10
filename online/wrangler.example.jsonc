@@ -1,0 +1,45 @@
+{
+  "name": "daily-listening-online",
+  "main": "src/worker.mjs",
+  "compatibility_date": "2026-10-10",
+  "workers_dev": true,
+  "preview_urls": false,
+  "assets": {
+    "directory": "public",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
+  "vars": {
+    "ACCESS_TEAM": "",
+    "ACCESS_AUD": "",
+    "GENERATION_ENABLED": "false",
+    "TTS_ENABLED": "false",
+    "ENVIRONMENT": "production"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "daily-listening-online",
+      "database_id": "FILL_PRIVATE_DATABASE_ID"
+    },
+    {
+      "binding": "BUDGET",
+      "database_name": "daily-listening-budget",
+      "database_id": "FILL_SHARED_BUDGET_DATABASE_ID"
+    }
+  ],
+  "ai": {
+    "binding": "AI"
+  },
+  "triggers": {
+    "crons": [
+      "*/5 * * * *"
+    ]
+  },
+  "r2_buckets": [
+    {
+      "binding": "AUDIO",
+      "bucket_name": "daily-listening-audio"
+    }
+  ]
+}
