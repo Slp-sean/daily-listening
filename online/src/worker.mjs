@@ -132,8 +132,10 @@ async function produce(env){
  if(env.GENERATION_ENABLED!=='true'||!env.DEEPSEEK_KEY)return;
  const db=env.DB.withSession('first-primary');
  const budgetDb=(env.BUDGET||env.DB).withSession('first-primary');
- const job=await read(db,"SELECT * FROM jobs WHERE status IN ('pending','retry','generating') AND lease_until<? AND (attempts<4 OR content IS NOT NULL) ORDER BY day,group_id LIMIT 1",Date.now());if(!job)return;
- const token=crypto.randomUUID();const lease=await db.prepare("UPDATE jobs SET status='generating',lease_until=?,lease_token=?,attempts=attempts+CASE WHEN content IS NULL THEN 1 ELSE 0 END WHERE day=? AND group_id=? AND lease_until<? AND (attempts<4 OR content IS NOT NULL)").bind(Date.now()+300000,token,job.day,job.group_id,Date.now()).run();if(!lease.meta.changes)return;
+ // Retries remain eligible after a new day starts; the shared daily/monthly
+ // budget below limits paid calls, while the lease prevents concurrent work.
+ const job=await read(db,"SELECT * FROM jobs WHERE status IN ('pending','retry','generating') AND lease_until<? ORDER BY day,group_id LIMIT 1",Date.now());if(!job)return;
+ const token=crypto.randomUUID();const lease=await db.prepare("UPDATE jobs SET status='generating',lease_until=?,lease_token=?,attempts=attempts+CASE WHEN content IS NULL THEN 1 ELSE 0 END WHERE day=? AND group_id=? AND lease_until<?").bind(Date.now()+300000,token,job.day,job.group_id,Date.now()).run();if(!lease.meta.changes)return;
  try{
   const task=await taskFor(db,job.day),g=task.groups.find(g=>'G'+String(g.group_id).padStart(2,'0')===job.group_id);if(!g||await groupSignature(task.project_id,task.date,job.group_id,g.words)!==job.signature)throw Error('冻结 Group 签名不匹配');
   const cards=(await cardsFor(db,task)).filter(c=>g.words.map(key).includes(key(c.word)));
