@@ -14,7 +14,8 @@
     "ACCESS_AUD": "",
     "GENERATION_ENABLED": "false",
     "TTS_ENABLED": "false",
-    "ENVIRONMENT": "production"
+    "ENVIRONMENT": "production",
+    "FORMAL_ACTIVE": "false"
   },
   "d1_databases": [
     {

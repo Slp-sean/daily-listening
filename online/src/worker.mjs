@@ -76,12 +76,12 @@ async function advance(db){
   const result=await db.prepare('UPDATE project SET current_date=?,revision=revision+1 WHERE revision=? AND id=1').bind(next.date,m.revision).run();if(result.meta.changes)return;
  }
 }
-async function snapshot(db,day,environment='preview'){
+async function snapshot(db,day,environment='preview',writable=true){
  await advance(db);const m=await read(db,'SELECT * FROM project WHERE id=1');if(!m)throw err('学习数据尚未导入',503);
  const task=await taskFor(db,day||m.current_date);if(!task)throw err('该日任务尚未冻结',404);
  const jobs=await rows(db,'SELECT group_id,status,content,content_hash,error FROM jobs WHERE day=?',task.date);
  const playback=await rows(db,'SELECT group_id,revision,body FROM playback WHERE session_id=?',task.session_id);
- return {ok:true,environment,authority:'cloud-d1',rule_version:RULE_VERSION,revision:m.revision,current_date:m.current_date,task,cards:await cardsFor(db,task),listening:jobs.map(j=>({...j,content:j.content?JSON.parse(j.content):null})),playback:playback.map(p=>({...p,body:JSON.parse(p.body)})),dates:(await rows(db,'SELECT day FROM sessions ORDER BY day DESC')).map(r=>r.day)};
+ return {ok:true,environment,writable,authority:'cloud-d1',rule_version:RULE_VERSION,revision:m.revision,current_date:m.current_date,task,cards:await cardsFor(db,task),listening:jobs.map(j=>({...j,content:j.content?JSON.parse(j.content):null})),playback:playback.map(p=>({...p,body:JSON.parse(p.body)})),dates:(await rows(db,'SELECT day FROM sessions ORDER BY day DESC')).map(r=>r.day)};
 }
 async function progress(db,body){
  const task=await taskFor(db,body.date);if(!task||task.session_id!==body.session_id)throw err('听读任务已变化',409);
@@ -143,11 +143,12 @@ export default {
    await identity(request,env);
    if(url.pathname.startsWith('/images/'))return json({ok:false,message:'在线版本不提供图片'},404);
    const db=env.DB.withSession('first-primary');
-   if(url.pathname==='/api/session'&&request.method==='GET')return json(await snapshot(db,url.searchParams.get('date'),env.ENVIRONMENT||'preview'));
+   if(url.pathname==='/api/session'&&request.method==='GET')return json(await snapshot(db,url.searchParams.get('date'),env.ENVIRONMENT||'preview',env.ENVIRONMENT!=='production'||env.FORMAL_ACTIVE==='true'));
    if(url.pathname==='/api/status'&&request.method==='GET')return json({ok:true,authority:'cloud-d1',budget:await rows(db,'SELECT * FROM budget ORDER BY day DESC LIMIT 31'),jobs:await rows(db,'SELECT day,group_id,status,error FROM jobs ORDER BY day DESC LIMIT 12')});
    if(url.pathname==='/api/export'&&request.method==='GET')return json({project:await read(db,'SELECT * FROM project'),cards:await rows(db,'SELECT * FROM cards'),states:await rows(db,'SELECT * FROM states'),sessions:await rows(db,'SELECT * FROM sessions'),review_log:await rows(db,'SELECT * FROM review_log')});
    if(url.pathname.startsWith('/api/audio/')&&request.method==='GET')return serveAudio(db,url.pathname.split('/').pop(),request,env.AUDIO,(env.BUDGET||env.DB).withSession('first-primary'));
    if(['/api/rate','/api/preview','/api/playback'].includes(url.pathname)&&request.method==='POST'){
+    if(env.ENVIRONMENT==='production'&&env.FORMAL_ACTIVE!=='true')throw err('正式接管尚未启用，请继续使用现有系统',503);
     if(request.headers.get('Origin')!==url.origin)throw err('请求来源不一致',403);
     if(!request.headers.get('Content-Type')?.startsWith('application/json'))throw err('请求格式不合法');
     if(Number(request.headers.get('Content-Length'))>20000)throw err('请求过大',413);
