@@ -123,10 +123,14 @@ async function pronunciation(db,env,request,ctx){
  }
  return serveAudio(db,hash,request,env.AUDIO,storageDb);
 }
-async function reserve(db){
+function dailyCallLimit(env,day){
+ const extra=Number(env.GENERATION_EXTRA_CALLS);
+ return 4+(env.GENERATION_EXTRA_DAY===day&&Number.isInteger(extra)&&extra>0&&extra<=2?extra:0);
+}
+async function reserve(db,env){
  const day=shanghaiDay(),month=day.slice(0,7);
  // Reserve 0.08 RMB before each <=4k output request. Conservative peak tariff upper bound.
- const r=await db.prepare("INSERT INTO budget(day,calls,reserved_fen) SELECT ?,1,8 WHERE COALESCE((SELECT SUM(reserved_fen) FROM budget WHERE day LIKE ?),0)+8<=1000 ON CONFLICT(day) DO UPDATE SET calls=calls+1,reserved_fen=reserved_fen+8 WHERE calls<4 AND COALESCE((SELECT SUM(reserved_fen) FROM budget WHERE day LIKE ?),0)+8<=1000").bind(day,month+'%',month+'%').run();return !!r.meta.changes;
+ const r=await db.prepare("INSERT INTO budget(day,calls,reserved_fen) SELECT ?,1,8 WHERE COALESCE((SELECT SUM(reserved_fen) FROM budget WHERE day LIKE ?),0)+8<=1000 ON CONFLICT(day) DO UPDATE SET calls=calls+1,reserved_fen=reserved_fen+8 WHERE calls<? AND COALESCE((SELECT SUM(reserved_fen) FROM budget WHERE day LIKE ?),0)+8<=1000").bind(day,month+'%',dailyCallLimit(env,day),month+'%').run();return !!r.meta.changes;
 }
 async function produce(env){
  if(env.GENERATION_ENABLED!=='true'||!env.DEEPSEEK_KEY)return;
@@ -140,7 +144,7 @@ async function produce(env){
   const task=await taskFor(db,job.day),g=task.groups.find(g=>'G'+String(g.group_id).padStart(2,'0')===job.group_id);if(!g||await groupSignature(task.project_id,task.date,job.group_id,g.words)!==job.signature)throw Error('冻结 Group 签名不匹配');
   const cards=(await cardsFor(db,task)).filter(c=>g.words.map(key).includes(key(c.word)));
   let segments=job.content?validateGroup({group_id:job.group_id,segments:JSON.parse(job.content)},job.group_id,g.words):null;
-  if(!segments){if(new TextEncoder().encode(prompt(job.group_id,cards)).length>16000)throw Error('生成输入超过预算允许长度');if(!await reserve(budgetDb))throw Error('每日或月度模型预算已达上限');
+  if(!segments){if(new TextEncoder().encode(prompt(job.group_id,cards)).length>16000)throw Error('生成输入超过预算允许长度');if(!await reserve(budgetDb,env))throw Error('每日或月度模型预算已达上限');
    const r=await fetch('https://api.deepseek.com/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+env.DEEPSEEK_KEY,'Content-Type':'application/json'},body:JSON.stringify({model:'deepseek-flash',thinking:{type:'disabled'},messages:[{role:'user',content:prompt(job.group_id,cards)}],response_format:{type:'json_object'},max_tokens:4000,temperature:.4}),signal:AbortSignal.timeout(120000)});
    if(!r.ok)throw Error('DeepSeek 调用失败 '+r.status);const result=await r.json();
    await budgetDb.prepare('INSERT INTO generation_usage(id,day,provider,usage) VALUES(?,?,?,?)').bind(token,shanghaiDay(),'deepseek',JSON.stringify({...result.usage,model:result.model,completed_at:new Date().toISOString(),format:'bilingual-sentences-v2',candidate:result.choices[0].message.content})).run();
