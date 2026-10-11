@@ -181,6 +181,7 @@ async function produce(env,allowGeneration=true){
   const cards=(await cardsFor(db,task)).filter(c=>g.words.map(key).includes(key(c.word)));
   const savedContent=job.content?JSON.parse(job.content):null;
   let segments=savedContent?validateGroup({group_id:job.group_id,segments:savedContent.segments||savedContent},job.group_id,g.words):null,normalizations=savedContent?.normalizations||[],candidateId=savedContent?.candidate_id||null;
+  if(!segments&&job.origin!=='api-contract-acceptance'&&await reuseVerifiedContent(db,budgetDb,env,job,g,token))return;
   if(!segments){
    const environment=env.ENVIRONMENT||'preview';
    const candidates=await rows(budgetDb,"SELECT id,usage FROM generation_usage WHERE provider='deepseek' AND json_extract(usage,'$.signature')=? AND json_extract(usage,'$.environment')=? AND json_extract(usage,'$.format')=? AND json_extract(usage,'$.contract_rejected') IS NULL AND COALESCE(json_extract(usage,'$.quality_rejected_policy'),'')!=? ORDER BY rowid DESC LIMIT 8",job.signature,environment,CONTENT_CONTRACT,QUALITY_POLICY);
@@ -189,7 +190,6 @@ async function produce(env,allowGeneration=true){
     segments=validateGroup(normalized,job.group_id,g.words);normalizations=normalized.normalizations;candidateId=candidate.id;break;
    }catch{/* A cached candidate must still pass the current task's complete validation. */}}
   }
-  if(!segments&&job.origin!=='api-contract-acceptance'&&await reuseVerifiedContent(db,budgetDb,env,job,g,token))return;
   if(!allowGeneration){await db.prepare("UPDATE jobs SET status='pending',lease_until=0 WHERE day=? AND group_id=? AND lease_token=?").bind(job.day,job.group_id,token).run();return;}
   if(!segments){if(new TextEncoder().encode(prompt(job.group_id,cards)).length>10000)throw Error('生成输入超过预算允许长度');if(!await reserve(budgetDb,env))throw Error('每日或月度模型预算已达上限');
    const r=await fetch('https://api.deepseek.com/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+env.DEEPSEEK_KEY,'Content-Type':'application/json'},body:JSON.stringify({model:'deepseek-flash',thinking:{type:'enabled'},reasoning_effort:'low',messages:[{role:'user',content:prompt(job.group_id,cards)}],response_format:{type:'json_object'},max_tokens:7000,temperature:.4}),signal:AbortSignal.timeout(120000)});
