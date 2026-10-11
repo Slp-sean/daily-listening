@@ -27,3 +27,28 @@ export async function readAudio(bucket,db,hash,request){
  if(r.range){const start=r.range.offset||0,length=r.range.length||r.size;headers.set('Content-Range',`bytes ${start}-${start+length-1}/${r.size}`);headers.set('Content-Length',String(length));return new Response(r.body,{status:206,headers})}
  headers.set('Content-Length',String(r.size));return new Response(r.body,{headers});
 }
+export function speechParts(text,limit=300){
+ const parts=[];let rest=text;
+ while(rest.length>limit){let end=limit;
+  for(let n=limit-1;n>=Math.floor(limit/2);n--)if(/[。！？.!?\n]/.test(rest[n])){end=n+1;break}
+  if(end===limit){const space=rest.lastIndexOf(' ',limit);if(space>=Math.floor(limit/2))end=space+1}
+  parts.push(rest.slice(0,end));rest=rest.slice(end);
+ }
+ if(rest)parts.push(rest);return parts;
+}
+export function joinWaves(parts){
+ let format=null,total=0;const data=[];
+ for(const bytes of parts){const v=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength),tag=n=>String.fromCharCode(...bytes.subarray(n,n+4));
+  if(bytes.length<44||tag(0)!=='RIFF'||tag(8)!=='WAVE')throw Error('语音片段不是有效 WAV');let fmt=null,pcm=null;
+  for(let n=12;n+8<=bytes.length;){const size=v.getUint32(n+4,true),start=n+8;if(start+size>bytes.length)throw Error('语音片段不完整');
+   if(tag(n)==='fmt '&&size>=16)fmt=[v.getUint16(start,true),v.getUint16(start+2,true),v.getUint32(start+4,true),v.getUint16(start+14,true)];
+   if(tag(n)==='data')pcm=bytes.subarray(start,start+size);n=start+size+(size%2);
+  }
+  if(!fmt||fmt[0]!==1||fmt[3]!==16||!pcm?.length)throw Error('语音片段格式不支持');
+  if(format&&fmt.some((x,i)=>x!==format[i]))throw Error('语音片段采样格式不一致');format=fmt;data.push(pcm);total+=pcm.length;
+ }
+ if(!format)throw Error('语音片段为空');const out=new Uint8Array(44+total),v=new DataView(out.buffer),tag=(n,s)=>[...s].forEach((c,i)=>out[n+i]=c.charCodeAt(0));
+ tag(0,'RIFF');v.setUint32(4,36+total,true);tag(8,'WAVE');tag(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,format[1],true);v.setUint32(24,format[2],true);
+ const align=format[1]*format[3]/8;v.setUint32(28,format[2]*align,true);v.setUint16(32,align,true);v.setUint16(34,format[3],true);tag(36,'data');v.setUint32(40,total,true);
+ let n=44;for(const pcm of data){out.set(pcm,n);n+=pcm.length}return out;
+}

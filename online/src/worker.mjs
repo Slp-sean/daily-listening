@@ -1,4 +1,4 @@
-import {hasAudio,writeAudio,readAudio,reserveStorage,reserveTts} from './audio-store.mjs';
+import {hasAudio,writeAudio,readAudio,reserveStorage,reserveTts,speechParts,joinWaves} from './audio-store.mjs';
 import {RULE_VERSION,key,addDays,shanghaiDay,applyRating,insertRecheck,selectWords,makeTask,sha,groupSignature} from './srs.mjs';
 import {validateGroup,normalizeGeneratedGroup,prompt,contentHash} from './content.mjs';
 const json=(x,status=200)=>new Response(JSON.stringify(x),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
@@ -71,6 +71,16 @@ async function mutate(db,body,kind){
 async function advance(db){
  for(let tries=0;tries<4;tries++){
   const m=await read(db,'SELECT * FROM project WHERE id=1');if(!m)return;const current=await taskFor(db,m.current_date);
+  const today=shanghaiDay();
+  if(m.current_date<today){
+   let next=await taskFor(db,today);const rev=m.revision,stmts=[];
+   if(!next){const settings=JSON.parse(m.settings),cards=(await rows(db,'SELECT body FROM cards')).map(parse),states=await allStates(db);
+    next=await makeTask(m.project_id,today,selectWords(cards,states,today,settings.daily_new_count),settings.group_size,current?.session_id||m.project_id);
+    stmts.push(db.prepare('INSERT INTO sessions(day,session_id,body) SELECT ?,?,? WHERE EXISTS(SELECT 1 FROM project WHERE revision=?) ON CONFLICT(day) DO NOTHING').bind(today,next.session_id,JSON.stringify(next),rev));
+   }
+   stmts.push(...await queueStatements(db,next,rev),db.prepare('UPDATE project SET current_date=?,revision=revision+1 WHERE revision=? AND id=1').bind(today,rev));
+   await db.batch(stmts);if((await read(db,'SELECT current_date FROM project WHERE id=1')).current_date===today)return;continue;
+  }
   if(!current?.items.length||!current.items.every(i=>i.completed))return;
   const next=await taskFor(db,addDays(current.date,1));if(!next||next.date>shanghaiDay())return;
   const result=await db.prepare('UPDATE project SET current_date=?,revision=revision+1 WHERE revision=? AND id=1').bind(next.date,m.revision).run();if(result.meta.changes)return;
@@ -135,11 +145,12 @@ async function reserve(db,env){
 async function produce(env){
  if(env.GENERATION_ENABLED!=='true'||!env.DEEPSEEK_KEY)return;
  const db=env.DB.withSession('first-primary');
+ await advance(db);
  const budgetDb=(env.BUDGET||env.DB).withSession('first-primary');
  // Retries remain eligible after a new day starts; the shared daily/monthly
  // budget below limits paid calls, while the lease prevents concurrent work.
  const job=await read(db,"SELECT * FROM jobs WHERE status IN ('pending','retry','generating') AND lease_until<? ORDER BY day,group_id LIMIT 1",Date.now());if(!job)return;
- const token=crypto.randomUUID();const lease=await db.prepare("UPDATE jobs SET status='generating',lease_until=?,lease_token=?,attempts=attempts+CASE WHEN content IS NULL THEN 1 ELSE 0 END WHERE day=? AND group_id=? AND lease_until<?").bind(Date.now()+300000,token,job.day,job.group_id,Date.now()).run();if(!lease.meta.changes)return;
+ const token=crypto.randomUUID();const lease=await db.prepare("UPDATE jobs SET status='generating',error=NULL,lease_until=?,lease_token=?,attempts=attempts+CASE WHEN content IS NULL THEN 1 ELSE 0 END WHERE day=? AND group_id=? AND lease_until<?").bind(Date.now()+1200000,token,job.day,job.group_id,Date.now()).run();if(!lease.meta.changes)return;
  try{
   const task=await taskFor(db,job.day),g=task.groups.find(g=>'G'+String(g.group_id).padStart(2,'0')===job.group_id);if(!g||await groupSignature(task.project_id,task.date,job.group_id,g.words)!==job.signature)throw Error('冻结 Group 签名不匹配');
   const cards=(await cardsFor(db,task)).filter(c=>g.words.map(key).includes(key(c.word)));
@@ -165,15 +176,24 @@ async function produce(env){
   }
   if(env.TTS_ENABLED!=='true')throw Error('正文已通过校验，云端语音尚未启用');
   // MeloTTS Chinese supports Chinese/English mixed text. One immutable audio per Group.
-  const speech=segments.map(s=>s.speech_content).join('\n'),audioHash=await sha('melotts-zh-v1:'+speech);
+  const speech=segments.map(s=>s.speech_content).join('\n'),audioHash=await sha('melotts-zh-v2:'+speech),pieceHashes=[];
   if(!(env.AUDIO?await hasAudio(env.AUDIO,budgetDb,audioHash):await read(db,'SELECT chunk FROM audio WHERE hash=? LIMIT 1',audioHash))){
-   await reserveTts(budgetDb,speech);
-   const result=await env.AI.run('@cf/myshell-ai/melotts',{prompt:speech,lang:'zh'});
-   let bytes;if(result instanceof ReadableStream)bytes=new Uint8Array(await new Response(result).arrayBuffer());else if(result instanceof ArrayBuffer)bytes=new Uint8Array(result);else if(result.audio)bytes=b64(result.audio);else throw Error('语音返回格式异常');
-   if(bytes.length<1000)throw Error('云端语音为空');if(env.AUDIO){await writeAudio(env.AUDIO,budgetDb,audioHash,bytes)}else{const stmts=[];for(let n=0;n<bytes.length;n+=200000)stmts.push(db.prepare('INSERT OR IGNORE INTO audio(hash,chunk,data) VALUES(?,?,?)').bind(audioHash,n/200000,bytes.slice(n,n+200000)));await db.batch(stmts);}
+   const parts=[];let index=0;for(const text of speechParts(speech)){
+    const owner=await read(db,'SELECT lease_token FROM jobs WHERE day=? AND group_id=?',job.day,job.group_id);if(owner?.lease_token!==token)throw Error('音频任务已由新版本接管');
+    const hash=await sha(audioHash+':piece:'+index++);pieceHashes.push(hash);let bytes;
+    if(env.AUDIO&&await hasAudio(env.AUDIO,budgetDb,hash)){await reserveStorage(budgetDb,'read_ops',1,100000,new Date().toISOString().slice(0,7));const object=await env.AUDIO.get(hash);if(!object)throw Error('音频片段待恢复');bytes=new Uint8Array(await object.arrayBuffer())}
+    else{await reserveTts(budgetDb,text);const result=await env.AI.run('@cf/myshell-ai/melotts',{prompt:text,lang:'zh'});
+     if(result instanceof ReadableStream)bytes=new Uint8Array(await new Response(result).arrayBuffer());else if(result instanceof ArrayBuffer)bytes=new Uint8Array(result);else if(result.audio)bytes=b64(result.audio);else throw Error('语音返回格式异常');
+     if(bytes.length<1000)throw Error('云端语音为空');if(env.AUDIO)await writeAudio(env.AUDIO,budgetDb,hash,bytes);
+    }
+    parts.push(bytes);
+   }
+   const bytes=joinWaves(parts);if(env.AUDIO){await writeAudio(env.AUDIO,budgetDb,audioHash,bytes)}else{const stmts=[];for(let n=0;n<bytes.length;n+=200000)stmts.push(db.prepare('INSERT OR IGNORE INTO audio(hash,chunk,data) VALUES(?,?,?)').bind(audioHash,n/200000,bytes.slice(n,n+200000)));await db.batch(stmts);}
   }
   const content={generator:job.origin||'deepseek-api',candidate_id:candidateId,normalizations,segments,audio:'/api/audio/'+audioHash,signature:job.signature,active_version:1,speech_hash:await sha(speech)};
   await db.prepare("UPDATE jobs SET status='ready',content=?,content_hash=?,lease_until=0,error=NULL WHERE day=? AND group_id=? AND lease_token=?").bind(JSON.stringify(content),await contentHash(segments),job.day,job.group_id,token).run();
+  // Only temporary pieces are removed after the complete published audio exists.
+  if(env.AUDIO)for(const hash of pieceHashes){try{await env.AUDIO.delete(hash);await budgetDb.prepare('DELETE FROM audio_objects WHERE hash=?').bind(hash).run()}catch{/* Keep an unfinished cleanup safely accounted for. */}}
  }catch(e){const capped=e.message==='每日或月度模型预算已达上限';await db.prepare("UPDATE jobs SET status='retry',lease_until=?,error=?,attempts=attempts-? WHERE day=? AND group_id=? AND lease_token=?").bind(Date.now()+600000,e.message,capped?1:0,job.day,job.group_id,token).run()}
 }
 export default {
@@ -183,7 +203,8 @@ export default {
    await identity(request,env);
    if(url.pathname.startsWith('/images/'))return json({ok:false,message:'在线版本不提供图片'},404);
    const db=env.DB.withSession('first-primary');
-   if(url.pathname==='/api/session'&&request.method==='GET')return json(await snapshot(db,url.searchParams.get('date'),env.ENVIRONMENT||'preview',env.ENVIRONMENT!=='production'||env.FORMAL_ACTIVE==='true'));
+   if(url.pathname==='/api/session'&&request.method==='GET'){const data=await snapshot(db,url.searchParams.get('date'),env.ENVIRONMENT||'preview',env.ENVIRONMENT!=='production'||env.FORMAL_ACTIVE==='true');if(data.listening.some(j=>j.status!=='ready'))ctx.waitUntil(produce(env));return json(data)}
+   if(url.pathname==='/latest'||url.pathname==='/latest/')return Response.redirect(url.origin+'/',302);
    if(url.pathname==='/api/pronunciation'&&request.method==='GET')return await pronunciation(db,env,request,ctx);
    if(url.pathname==='/api/status'&&request.method==='GET')return json({ok:true,authority:'cloud-d1',budget:await rows(db,'SELECT * FROM budget ORDER BY day DESC LIMIT 31'),jobs:await rows(db,'SELECT day,group_id,status,error FROM jobs ORDER BY day DESC LIMIT 12')});
    if(url.pathname==='/api/export'&&request.method==='GET')return json({project:await read(db,'SELECT * FROM project'),cards:await rows(db,'SELECT * FROM cards'),states:await rows(db,'SELECT * FROM states'),sessions:await rows(db,'SELECT * FROM sessions'),review_log:await rows(db,'SELECT * FROM review_log')});
