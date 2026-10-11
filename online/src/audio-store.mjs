@@ -1,7 +1,7 @@
 // Private R2 is optional; existing D1 audio remains readable during adoption.
 export async function reserveStorage(db,metric,amount,limit,period){
  const r=await db.prepare('INSERT INTO storage_budget(metric,period,amount) SELECT ?,?,? WHERE ?<=? ON CONFLICT(metric,period) DO UPDATE SET amount=amount+excluded.amount WHERE amount+excluded.amount<=?').bind(metric,period,amount,amount,limit,limit).run();
- if(!r.meta.changes)throw Error('免费音频存储额度保护已触发，现有音频和学习记录保留');
+ if(!r.meta.changes)throw Error(metric==='tts_neurons'?'今日免费语音与内容复核额度已达上限，现有音频和学习记录保留':'本月音频存储访问额度保护已触发，现有音频和学习记录保留');
 }
 const month=()=>new Date().toISOString().slice(0,7);
 export async function reserveTts(db,text){

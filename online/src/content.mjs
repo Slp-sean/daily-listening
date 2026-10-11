@@ -49,3 +49,13 @@ export function prompt(gid,cards){
 {"group_id":"${gid}","segments":[{"segment_no":1,"title":"简短中文场景标题","content_markup":"以中文为主体、自然嵌入标记目标词的简短情景段落"},{"segment_no":2,"title":"另一个简短中文场景标题","content_markup":"另一个中文情景段落"}]}`;
 }
 export async function contentHash(segments){return sha(JSON.stringify(segments))}
+
+export function generationPrompt(gid,cards,feedback){
+ const base=prompt(gid,cards),encoder=new TextEncoder();
+ if(encoder.encode(base).length>10000)throw Error('生成输入超过预算允许长度');
+ if(!feedback)return base;
+ const intro='\n上一份候选未通过质量检查。以下是检查意见数据，请逐项修正词法及短义，并重新组织自然中文微场景，不要照抄失败原稿：\n';
+ const allowance=10000-encoder.encode(base+intro).length;
+ let clipped='';for(const c of String(feedback)){if(encoder.encode(clipped+c).length>allowance)break;clipped+=c}
+ return clipped?base+intro+clipped:base;
+}

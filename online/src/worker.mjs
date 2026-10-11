@@ -1,6 +1,6 @@
 import {hasAudio,writeAudio,readAudio,reserveStorage,reserveTts,speechParts,joinWaves} from './audio-store.mjs';
 import {RULE_VERSION,key,addDays,shanghaiDay,applyRating,insertRecheck,selectWords,makeTask,sha,groupSignature} from './srs.mjs';
-import {validateGroup,normalizeGeneratedGroup,prompt,contentHash,CONTENT_CONTRACT} from './content.mjs';
+import {validateGroup,normalizeGeneratedGroup,generationPrompt,contentHash,CONTENT_CONTRACT} from './content.mjs';
 import {ensureQuality,QUALITY_POLICY} from './quality.mjs';
 const json=(x,status=200)=>new Response(JSON.stringify(x),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 const err=(message,status=400)=>Object.assign(Error(message),{status});
@@ -191,10 +191,15 @@ async function produce(env,allowGeneration=true){
    }catch{/* A cached candidate must still pass the current task's complete validation. */}}
   }
   if(!allowGeneration){await db.prepare("UPDATE jobs SET status='pending',lease_until=0 WHERE day=? AND group_id=? AND lease_token=?").bind(job.day,job.group_id,token).run();return;}
-  if(!segments){if(new TextEncoder().encode(prompt(job.group_id,cards)).length>10000)throw Error('生成输入超过预算允许长度');if(!await reserve(budgetDb,env))throw Error('每日或月度模型预算已达上限');
-   const r=await fetch('https://api.deepseek.com/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+env.DEEPSEEK_KEY,'Content-Type':'application/json'},body:JSON.stringify({model:'deepseek-flash',thinking:{type:'enabled'},reasoning_effort:'low',messages:[{role:'user',content:prompt(job.group_id,cards)}],response_format:{type:'json_object'},max_tokens:7000,temperature:.4}),signal:AbortSignal.timeout(120000)});
+  if(!segments){
+   const rejected=await read(budgetDb,"SELECT usage FROM generation_usage WHERE provider='deepseek' AND json_extract(usage,'$.signature')=? AND json_extract(usage,'$.environment')=? AND json_extract(usage,'$.format')=? ORDER BY rowid DESC LIMIT 1",job.signature,env.ENVIRONMENT||'preview',CONTENT_CONTRACT);
+   const prior=rejected?JSON.parse(rejected.usage):null,feedback=prior?.quality_rejected||prior?.validation_error||'',input=generationPrompt(job.group_id,cards,feedback);
+   const free=await read(budgetDb,"SELECT amount FROM storage_budget WHERE metric='tts_neurons' AND period=?",new Date().toISOString().slice(0,10));
+   if((free?.amount||0)+850>9000)throw Error('今日免费内容复核额度不足，暂停新的付费生成，额度恢复后自动继续');
+   if(!await reserve(budgetDb,env))throw Error('每日或月度模型预算已达上限');
+   const r=await fetch('https://api.deepseek.com/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+env.DEEPSEEK_KEY,'Content-Type':'application/json'},body:JSON.stringify({model:'deepseek-flash',thinking:{type:'enabled'},reasoning_effort:'low',messages:[{role:'user',content:input}],response_format:{type:'json_object'},max_tokens:7000,temperature:.4}),signal:AbortSignal.timeout(120000)});
    if(!r.ok)throw Error('DeepSeek 调用失败 '+r.status);const result=await r.json();
-   await budgetDb.prepare('INSERT INTO generation_usage(id,day,provider,usage) VALUES(?,?,?,?)').bind(token,shanghaiDay(),'deepseek',JSON.stringify({...result.usage,model:result.model,completed_at:new Date().toISOString(),format:CONTENT_CONTRACT,signature:job.signature,group_id:job.group_id,environment:env.ENVIRONMENT||'preview',request_reason:job.origin,candidate:result.choices[0].message.content})).run();
+   await budgetDb.prepare('INSERT INTO generation_usage(id,day,provider,usage) VALUES(?,?,?,?)').bind(token,shanghaiDay(),'deepseek',JSON.stringify({...result.usage,model:result.model,completed_at:new Date().toISOString(),format:CONTENT_CONTRACT,signature:job.signature,group_id:job.group_id,environment:env.ENVIRONMENT||'preview',request_reason:job.origin,quality_feedback:feedback,input_bytes:new TextEncoder().encode(input).length,candidate:result.choices[0].message.content})).run();
    candidateId=token;try{if(result.choices[0].finish_reason==='length')throw Error('模型输出截断，不能发布');const normalized=normalizeGeneratedGroup(JSON.parse(result.choices[0].message.content),job.group_id,g.words);segments=validateGroup(normalized,job.group_id,g.words);normalizations=normalized.normalizations}catch(e){await budgetDb.prepare("UPDATE generation_usage SET usage=json_set(usage,'$.validation_error',?) WHERE id=?").bind(e.message,token).run();throw e}
   }
   if(candidateId){
