@@ -1,5 +1,28 @@
 import {sha,key} from './srs.mjs';
 const markup=/\{\{([^|{}]+)\|([^{}]*)\}\}/g;
+// The model supplies complete English sentences and Chinese explanations.
+// Only this adapter inserts study markup; target spellings come from the task.
+export function normalizeGeneratedGroup(raw,gid,words){
+ if(raw?.group_id!==gid||!Array.isArray(raw.segments)||raw.segments.length<2||raw.segments.length>4)throw Error('生成场景结构不合法');
+ const frozen=new Map(words.map(w=>[key(w),w])),seen=new Set();
+ const clean=(value,max)=>{if(typeof value!=='string'||!value.trim()||value.length>max||/[{}|]/.test(value))throw Error('生成文本格式不合法');return value.trim()};
+ const segments=raw.segments.map((s,i)=>{
+  if(s.segment_no!==i+1||!Array.isArray(s.sentences)||!s.sentences.length)throw Error('生成场景句子结构不合法');
+  const title=clean(s.title,60),intro=clean(s.intro,200);
+  const sentences=s.sentences.map(row=>{
+   const word=frozen.get(key(clean(row.word,80)));if(!word||seen.has(key(word)))throw Error('生成句子词条不属于任务或重复');
+   const english=clean(row.english,500),meaning=clean(row.meaning,200),gloss=clean(row.gloss,8);
+   if(/[\u3400-\u9fff]/u.test(english)||english.split(/\s+/).length<4||!/[.!?]["']?$/.test(english))throw Error('目标词必须放在完整英文句子中');
+   if(!/[\u3400-\u9fff]/u.test(meaning)||!/[\u3400-\u9fff]/u.test(gloss))throw Error('中文说明或短义缺失');
+   const escaped=word.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),match=new RegExp('\\b'+escaped+'\\b','i');
+   if(!match.test(english))throw Error('英文句子未保留目标词原形：'+word);
+   seen.add(key(word));return english.replace(match,()=>`{{${word}|${gloss}}}`)+' '+meaning;
+  });
+  return {segment_no:i+1,title,content_markup:intro+' '+sentences.join(' ')};
+ });
+ if(seen.size!==frozen.size)throw Error('生成句子目标词覆盖不完整');
+ return {group_id:gid,segments};
+}
 export function validateGroup(raw,gid,words){
  if(!raw||raw.group_id!==gid||!Array.isArray(raw.segments)||!raw.segments.length||raw.segments.length>5)throw Error('Group 或段落数量不合法');
  const frozen=new Set(words.map(key)),seen=new Set();
@@ -19,5 +42,12 @@ export function validateGroup(raw,gid,words){
  });
  if(seen.size!==frozen.size)throw Error('目标词覆盖不完整');return segments;
 }
-export function prompt(gid,cards){return `为中国成人英语学习者生成中文为主体、英语自然嵌入的每日情景听读。仅用一般工作、学习与生活场景，不得引入任何真实人员、单位、私密事实或联系方式。\nGroup: ${gid}\n目标词及词义：${JSON.stringify(cards.map(c=>({word:c.word,translation:c.translation})))}\n分成2至4个中文叙述为主体的自然场景；目标词放入语法完整的简短英语句子或固定短语，再接中文说明。不要把英语动词当中文形容词或副词使用，不能写“很 astonish”“overt 承认”“lean 每天”。acquaint 必须写 acquaint oneself/himself/herself with，immerse 必须写 immerse oneself/himself/herself in，apt 必须接 to + 动词原形。允许短英语句子中有非目标词，但非目标词不可标注。每组英文用法应先自行检查再返回。全部目标词必须且仅用 {{英文词|当前语境短义}} 标注，短义不超过8字。标记内英文须逐字保留给定词形，不能改成过去式、复数或派生词；需要变化时改写句子，使用原形，如 modal + 原形或 to + 原形。保持词性配价：及物动词带宾语，形容词修饰名词，apt 使用 be apt to do，acquaint 使用 acquaint oneself with，immerse 带宾语和 in。覆盖率100%，不得额外标注其他词。只返回JSON {"group_id":"${gid}","segments":[{"segment_no":1,"title":"场景标题","content_markup":"正文"}]}`}
+export function prompt(gid,cards){return `Write a bilingual listening story for an adult English learner. Return JSON only.
+Group: ${gid}
+Exact target words and their dictionary meanings: ${JSON.stringify(cards.map(c=>({word:c.word,translation:c.translation})))}
+Create 2 to 4 connected everyday scenes about study, work or ordinary life. Each scene has a Chinese title and a brief Chinese intro. Distribute ALL supplied target words across the scenes, exactly one sentence entry per target word, no duplicates, no extra entries. The entries in each scene must form a coherent small story, not unrelated definitions.
+For each entry: word MUST equal the supplied target spelling; english MUST be a complete grammatical English sentence of about 6 to 18 words using that exact uninflected word; meaning is its natural Chinese translation; gloss is the target's Chinese meaning in that sentence, at most 8 Chinese characters. english contains English only, never Chinese. Do NOT put English words into Chinese grammar. Do NOT output braces, study markup or vertical bars in text fields; our program inserts markup.
+Use modal verbs or infinitives when needed to preserve verb spelling. Check verb objects and adjective usage. If present: use "I am apt to ...", "I immerse myself in ...", "Please acquaint yourself with ...", "The surprise may astonish ...", "Complex instructions can bewilder ...". Use "indifference" as a noun, "overt" as an adjective, and "momentary" before a noun. Do not rename the target word to a phrase such as "be apt to" or "immerse oneself".
+Use fictional generic people only. No real personal facts, institutions, contacts, addresses, URLs, credentials or medical advice. Only entries for supplied target words; examples above are guidance, not extra words to include.
+JSON shape: {"group_id":"${gid}","segments":[{"segment_no":1,"title":"中文场景标题","intro":"简短中文场景引入。","sentences":[{"word":"exact target","english":"A complete English sentence using the target.","meaning":"该完整句子的中文翻译。","gloss":"中文短义"}]}]}`}
 export async function contentHash(segments){return sha(JSON.stringify(segments))}

@@ -1,6 +1,6 @@
 import {hasAudio,writeAudio,readAudio,reserveStorage,reserveTts} from './audio-store.mjs';
 import {RULE_VERSION,key,addDays,shanghaiDay,applyRating,insertRecheck,selectWords,makeTask,sha,groupSignature} from './srs.mjs';
-import {validateGroup,prompt,contentHash} from './content.mjs';
+import {validateGroup,normalizeGeneratedGroup,prompt,contentHash} from './content.mjs';
 const json=(x,status=200)=>new Response(JSON.stringify(x),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 const err=(message,status=400)=>Object.assign(Error(message),{status});
 const read=async(db,sql,...values)=>db.prepare(sql).bind(...values).first();
@@ -141,10 +141,10 @@ async function produce(env){
   const cards=(await cardsFor(db,task)).filter(c=>g.words.map(key).includes(key(c.word)));
   let segments=job.content?validateGroup({group_id:job.group_id,segments:JSON.parse(job.content)},job.group_id,g.words):null;
   if(!segments){if(new TextEncoder().encode(prompt(job.group_id,cards)).length>16000)throw Error('生成输入超过预算允许长度');if(!await reserve(budgetDb))throw Error('每日或月度模型预算已达上限');
-   const r=await fetch('https://api.deepseek.com/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+env.DEEPSEEK_KEY,'Content-Type':'application/json'},body:JSON.stringify({model:'deepseek-flash',thinking:{type:'disabled'},messages:[{role:'user',content:prompt(job.group_id,cards)}],response_format:{type:'json_object'},max_tokens:4000,temperature:.7}),signal:AbortSignal.timeout(120000)});
+   const r=await fetch('https://api.deepseek.com/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+env.DEEPSEEK_KEY,'Content-Type':'application/json'},body:JSON.stringify({model:'deepseek-flash',thinking:{type:'disabled'},messages:[{role:'user',content:prompt(job.group_id,cards)}],response_format:{type:'json_object'},max_tokens:4000,temperature:.4}),signal:AbortSignal.timeout(120000)});
    if(!r.ok)throw Error('DeepSeek 调用失败 '+r.status);const result=await r.json();
-   await budgetDb.prepare('INSERT INTO generation_usage(id,day,provider,usage) VALUES(?,?,?,?)').bind(token,shanghaiDay(),'deepseek',JSON.stringify({...result.usage,candidate:result.choices[0].message.content})).run();
-   segments=validateGroup(JSON.parse(result.choices[0].message.content),job.group_id,g.words);
+   await budgetDb.prepare('INSERT INTO generation_usage(id,day,provider,usage) VALUES(?,?,?,?)').bind(token,shanghaiDay(),'deepseek',JSON.stringify({...result.usage,model:result.model,completed_at:new Date().toISOString(),format:'bilingual-sentences-v2',candidate:result.choices[0].message.content})).run();
+   try{segments=validateGroup(normalizeGeneratedGroup(JSON.parse(result.choices[0].message.content),job.group_id,g.words),job.group_id,g.words)}catch(e){await budgetDb.prepare("UPDATE generation_usage SET usage=json_set(usage,'$.validation_error',?) WHERE id=?").bind(e.message,token).run();throw e}
    await db.batch([db.prepare('UPDATE jobs SET content=?,content_hash=? WHERE day=? AND group_id=? AND lease_token=?').bind(JSON.stringify(segments),await contentHash(segments),job.day,job.group_id,token)]);
   }
   if(env.TTS_ENABLED!=='true')throw Error('正文已通过校验，云端语音尚未启用');
