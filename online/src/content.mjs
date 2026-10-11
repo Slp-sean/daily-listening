@@ -42,12 +42,15 @@ export function validateGroup(raw,gid,words){
  });
  if(seen.size!==frozen.size)throw Error('目标词覆盖不完整');return segments;
 }
-export function prompt(gid,cards){return `Write a bilingual listening story for an adult English learner. Return JSON only.
+export function prompt(gid,cards){
+ const size=Math.ceil(cards.length/3),layout=Array.from({length:3},(_,i)=>({segment_no:i+1,title:'填中文场景标题',intro:'填简短中文场景引入。',sentences:cards.slice(i*size,(i+1)*size).map(c=>({word:c.word,english:'',meaning:'',gloss:''}))})).filter(s=>s.sentences.length);
+ return `Write a bilingual listening story for an adult English learner. Return JSON only.
 Group: ${gid}
 Exact target words and their dictionary meanings: ${JSON.stringify(cards.map(c=>({word:c.word,translation:c.translation})))}
-Create 2 to 4 connected everyday scenes about study, work or ordinary life. Each scene has a Chinese title and a brief Chinese intro. Distribute ALL supplied target words across the scenes, exactly one sentence entry per target word, no duplicates, no extra entries. The entries in each scene must form a coherent small story, not unrelated definitions.
+Complete the THREE separate scenes in the JSON template below. Preserve every scene number, every word spelling and every sentence entry in its assigned scene. Do NOT merge the scenes into one. Use connected everyday scenes about study, work or ordinary life. Each scene has a Chinese title and a brief Chinese intro. The entries in each scene must form a coherent small story, not unrelated definitions.
 For each entry: word MUST equal the supplied target spelling; english MUST be a complete grammatical English sentence of about 6 to 18 words using that exact uninflected word; meaning is its natural Chinese translation; gloss is the target's Chinese meaning in that sentence, at most 8 Chinese characters. english contains English only, never Chinese. Do NOT put English words into Chinese grammar. Do NOT output braces, study markup or vertical bars in text fields; our program inserts markup.
 Use modal verbs or infinitives when needed to preserve verb spelling. Check verb objects and adjective usage. If present: use "I am apt to ...", "I immerse myself in ...", "Please acquaint yourself with ...", "The surprise may astonish ...", "Complex instructions can bewilder ...". Use "indifference" as a noun, "overt" as an adjective, and "momentary" before a noun. Do not rename the target word to a phrase such as "be apt to" or "immerse oneself".
 Use fictional generic people only. No real personal facts, institutions, contacts, addresses, URLs, credentials or medical advice. Only entries for supplied target words; examples above are guidance, not extra words to include.
-JSON shape: {"group_id":"${gid}","segments":[{"segment_no":1,"title":"中文场景标题","intro":"简短中文场景引入。","sentences":[{"word":"exact target","english":"A complete English sentence using the target.","meaning":"该完整句子的中文翻译。","gloss":"中文短义"}]}]}`}
+Before returning, check the English sentence contains the exact word as a separate word. Plurals, past forms and derivatives do NOT count: for target "installment", use "an installment", not "installments". Fill all empty text fields. Return the complete template, with all three scenes and all entries:
+${JSON.stringify({group_id:gid,segments:layout})}`}
 export async function contentHash(segments){return sha(JSON.stringify(segments))}
