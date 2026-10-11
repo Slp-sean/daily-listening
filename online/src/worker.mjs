@@ -1,6 +1,7 @@
 import {hasAudio,writeAudio,readAudio,reserveStorage,reserveTts,speechParts,joinWaves} from './audio-store.mjs';
 import {RULE_VERSION,key,addDays,shanghaiDay,applyRating,insertRecheck,selectWords,makeTask,sha,groupSignature} from './srs.mjs';
 import {validateGroup,normalizeGeneratedGroup,prompt,contentHash,CONTENT_CONTRACT} from './content.mjs';
+import {ensureQuality,QUALITY_POLICY} from './quality.mjs';
 const json=(x,status=200)=>new Response(JSON.stringify(x),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 const err=(message,status=400)=>Object.assign(Error(message),{status});
 const canWrite=(env,url)=>env.ENVIRONMENT!=='production'||(env.FORMAL_ACTIVE==='true'&&url.hostname==='listen.zhaocaijinbao.top');
@@ -154,7 +155,7 @@ async function reuseVerifiedContent(db,storageDb,env,job,group,token){
   if(!g||JSON.stringify(g.words.map(key))!==JSON.stringify(group.words.map(key)))continue;
   try{
    if(source.signature!==await groupSignature(task.project_id,task.date,source.group_id,g.words))continue;
-   const original=JSON.parse(source.content),segments=validateGroup({group_id:job.group_id,segments:original.segments},job.group_id,group.words);
+   const original=JSON.parse(source.content);if(original.generator?.startsWith('deepseek-api')&&!original.quality_review?.approved)continue;const segments=validateGroup({group_id:job.group_id,segments:original.segments},job.group_id,group.words);
    const hash=await contentHash(segments),speechHash=await sha(segments.map(s=>s.speech_content).join('\n'));
    if(hash!==source.content_hash||speechHash!==original.speech_hash)continue;
    const audioHash=original.audio?.match(/^\/api\/audio\/([a-f0-9]{64})$/)?.[1];
@@ -182,7 +183,7 @@ async function produce(env,allowGeneration=true){
   let segments=savedContent?validateGroup({group_id:job.group_id,segments:savedContent.segments||savedContent},job.group_id,g.words):null,normalizations=savedContent?.normalizations||[],candidateId=savedContent?.candidate_id||null;
   if(!segments){
    const environment=env.ENVIRONMENT||'preview';
-   const candidates=await rows(budgetDb,"SELECT id,usage FROM generation_usage WHERE provider='deepseek' AND json_extract(usage,'$.signature')=? AND json_extract(usage,'$.environment')=? AND json_extract(usage,'$.format')=? AND json_extract(usage,'$.contract_rejected') IS NULL ORDER BY rowid DESC LIMIT 8",job.signature,environment,CONTENT_CONTRACT);
+   const candidates=await rows(budgetDb,"SELECT id,usage FROM generation_usage WHERE provider='deepseek' AND json_extract(usage,'$.signature')=? AND json_extract(usage,'$.environment')=? AND json_extract(usage,'$.format')=? AND json_extract(usage,'$.contract_rejected') IS NULL AND COALESCE(json_extract(usage,'$.quality_rejected_policy'),'')!=? ORDER BY rowid DESC LIMIT 8",job.signature,environment,CONTENT_CONTRACT,QUALITY_POLICY);
    for(const candidate of candidates){try{
     const saved=JSON.parse(candidate.usage),normalized=normalizeGeneratedGroup(JSON.parse(saved.candidate),job.group_id,g.words);
     segments=validateGroup(normalized,job.group_id,g.words);normalizations=normalized.normalizations;candidateId=candidate.id;break;
@@ -200,6 +201,8 @@ async function produce(env,allowGeneration=true){
    await budgetDb.prepare("UPDATE generation_usage SET usage=json_set(usage,'$.validated_signature',?,'$.normalizations',json(?)) WHERE id=?").bind(job.signature,JSON.stringify(normalizations),candidateId).run();
    await db.prepare('UPDATE jobs SET content=?,content_hash=? WHERE day=? AND group_id=? AND lease_token=?').bind(JSON.stringify({segments,candidate_id:candidateId,normalizations}),await contentHash(segments),job.day,job.group_id,token).run();
   }
+  let quality;try{quality=await ensureQuality(env,budgetDb,job,cards,segments,savedContent?.quality_review)}catch(e){if(e.quality_rejected){if(candidateId)await budgetDb.prepare("UPDATE generation_usage SET usage=json_set(usage,'$.quality_rejected',?,'$.quality_rejected_policy',?) WHERE id=?").bind(e.message,QUALITY_POLICY,candidateId).run();await db.prepare('UPDATE jobs SET content=NULL,content_hash=NULL WHERE day=? AND group_id=? AND lease_token=?').bind(job.day,job.group_id,token).run()}throw e}segments=quality.segments;
+  await db.prepare('UPDATE jobs SET content=?,content_hash=? WHERE day=? AND group_id=? AND lease_token=?').bind(JSON.stringify({segments,candidate_id:candidateId,normalizations,quality_review:quality.review}),await contentHash(segments),job.day,job.group_id,token).run();
   if(env.TTS_ENABLED!=='true')throw Error('正文已通过校验，云端语音尚未启用');
   // MeloTTS Chinese supports Chinese/English mixed text. One immutable audio per Group.
   const speech=segments.map(s=>s.speech_content).join('\n'),audioHash=await sha('melotts-zh-v2:'+speech),pieceHashes=[];
@@ -216,7 +219,7 @@ async function produce(env,allowGeneration=true){
    }
    const bytes=joinWaves(parts);if(env.AUDIO){await writeAudio(env.AUDIO,budgetDb,audioHash,bytes)}else{const stmts=[];for(let n=0;n<bytes.length;n+=200000)stmts.push(db.prepare('INSERT OR IGNORE INTO audio(hash,chunk,data) VALUES(?,?,?)').bind(audioHash,n/200000,bytes.slice(n,n+200000)));await db.batch(stmts);}
   }
-  const content={contract:CONTENT_CONTRACT,generator:job.origin==='api-contract-acceptance'?'deepseek-api':(job.origin||'deepseek-api'),candidate_id:candidateId,normalizations,segments,audio:'/api/audio/'+audioHash,signature:job.signature,active_version:1,speech_hash:await sha(speech)};
+  const content={contract:CONTENT_CONTRACT,generator:quality.revised?'deepseek-api+cloudflare-quality-revision':job.origin==='api-contract-acceptance'?'deepseek-api':(job.origin||'deepseek-api'),candidate_id:candidateId,normalizations,quality_review:quality.review,segments,audio:'/api/audio/'+audioHash,signature:job.signature,active_version:1,speech_hash:await sha(speech)};
   await db.prepare("UPDATE jobs SET status='ready',content=?,content_hash=?,lease_until=0,error=NULL WHERE day=? AND group_id=? AND lease_token=?").bind(JSON.stringify(content),await contentHash(segments),job.day,job.group_id,token).run();
   // Only temporary pieces are removed after the complete published audio exists.
   if(env.AUDIO)for(const hash of pieceHashes){try{await env.AUDIO.delete(hash);await budgetDb.prepare('DELETE FROM audio_objects WHERE hash=?').bind(hash).run()}catch{/* Keep an unfinished cleanup safely accounted for. */}}
