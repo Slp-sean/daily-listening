@@ -1,37 +1,13 @@
 import {sha,key} from './srs.mjs';
 const markup=/\{\{([^|{}]+)\|([^{}]*)\}\}/g;
-// The model supplies complete English sentences and Chinese explanations.
-// Only this adapter inserts study markup; target spellings come from the task.
+// Keep the original Chinese scenario contract. No sentence/translation adapter.
+export const CONTENT_CONTRACT='chinese-scenario-v1';
 export function normalizeGeneratedGroup(raw,gid,words){
- if(raw?.group_id!==gid||!Array.isArray(raw.segments)||!raw.segments.length||raw.segments.length>4)throw Error('生成场景结构不合法');
- const frozen=new Map(words.map(w=>[key(w),w])),seen=new Set(),normalizations=[];
- const clean=(value,max)=>{if(typeof value!=='string'||!value.trim()||value.length>max||/[{}|]/.test(value))throw Error('生成文本格式不合法');return value.trim()};
- const segments=raw.segments.map((s,i)=>{
-  if(s.segment_no!==i+1||!Array.isArray(s.sentences)||!s.sentences.length)throw Error('生成场景句子结构不合法');
-  const title=clean(s.title,60),intro=clean(s.intro,200);
-  const sentences=s.sentences.map(row=>{
-   const word=frozen.get(key(clean(row.word,80)));if(!word||seen.has(key(word)))throw Error('生成句子词条不属于任务或重复');
-   const english=clean(row.english,500),meaning=clean(row.meaning,200);let gloss=clean(row.gloss,8);
-   if(/[\u3400-\u9fff]/u.test(english)||english.split(/\s+/).length<4||!/[.!?]["']?$/.test(english))throw Error('目标词必须放在完整英文句子中');
-   if(!/[\u3400-\u9fff]/u.test(meaning)||!/[\u3400-\u9fff]/u.test(gloss))throw Error('中文说明或短义缺失');
-   if(key(word)==='dubious'&&/\bdubious\s+about\b/i.test(english)&&/可疑/.test(gloss)){
-    normalizations.push({word,rule:'dubious-about-sense',from:gloss,to:'存疑的'});gloss='存疑的';
-   }
-   // Preserve the original spoken plural; only the study marker uses its lemma.
-   const plural=key(word)==='installment',escaped=word.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),match=new RegExp('\\b'+escaped+(plural?'(s)?':'')+'\\b','i');
-   if(!match.test(english))throw Error('英文句子未保留目标词原形：'+word);
-   seen.add(key(word));return english.replace(match,(_,suffix)=>{
-    const ending=plural&&suffix==='s'?'s':'';if(ending)normalizations.push({word,rule:'noun-plural-marker',form:word+ending});
-    return `{{${word}|${gloss}}}`+ending;
-   })+' '+meaning;
-  });
-  return {segment_no:i+1,title,content_markup:intro+' '+sentences.join(' ')};
- });
- if(seen.size!==frozen.size)throw Error('生成句子目标词覆盖不完整');
- return {group_id:gid,segments,normalizations};
+ const segments=validateGroup(raw,gid,words);
+ return {group_id:gid,segments,normalizations:[]};
 }
 export function validateGroup(raw,gid,words){
- if(!raw||raw.group_id!==gid||!Array.isArray(raw.segments)||!raw.segments.length||raw.segments.length>5)throw Error('Group 或段落数量不合法');
+ if(!raw||raw.group_id!==gid||!Array.isArray(raw.segments)||raw.segments.length<2||raw.segments.length>4)throw Error('Group 或段落数量不合法');
  const frozen=new Set(words.map(key)),seen=new Set();
  const patterns=[/\{\{overt\|[^}]*公开地[^}]*\}\}/i,/有些\s*\{\{bewilder\|/i,/\{\{acquaint\|[^}]*\}\}\s*自己和/i,/让我\s*\{\{astonish\|/i,/\{\{momentary\|[^}]*\}\}\s*闪/i,/\{\{apt\|[^}]*\}\}\s*漏/i,/\{\{immerse\|[^}]*\}\}\s*进/i];
  const segments=[...raw.segments].sort((a,b)=>a.segment_no-b.segment_no).map((s,i)=>{
@@ -39,27 +15,36 @@ export function validateGroup(raw,gid,words){
   const text=s.content_markup.trim(),matches=[...text.matchAll(markup)];
   if(matches.length!==(text.match(/\{\{/g)||[]).length||matches.length!==(text.match(/\}\}/g)||[]).length)throw Error('标记损坏');
   const speech=text.replace(markup,(_,w)=>w);
+  const context=text.replace(markup,'');
+  // Reject the sentence-by-sentence English/translation format while
+  // retaining the grammatical English phrases in existing Chinese scenes.
+  if(!/[\u3400-\u9fff]/u.test(context)||/(?:^|[。！？\n])\s*[A-Z][A-Za-z ,;:'’"\-]+[.!?]\s*[\u3400-\u9fff]/u.test(speech))throw Error('情景正文必须以中文叙述为主体，不能使用逐句英文加中文翻译');
+  if(/[{}]/.test(context))throw Error('正文含非法标记');
   if(/\{\{dubious\|[^}]*可疑[^}]*\}\}\s+about\b/i.test(text))throw Error('dubious about 的短义应表示怀疑');
   const usage=[[/\bacquaint\b/ig,/^acquaint\s+(?:myself|yourself|himself|herself|ourselves|themselves|oneself|the\s+\w+|[A-Za-z]+)\s+with\b/i,'acquaint 应带宾语及 with'],[/\bapt\b/ig,/^apt\s+to\s+[a-z]/i,'apt 应使用 be apt to do'],[/\bimmerse\b/ig,/^immerse\s+(?:myself|yourself|himself|herself|ourselves|themselves|oneself|[A-Za-z]+(?:\s+[A-Za-z]+){0,4})\s+in\b/i,'immerse 应带宾语及 in']];
   for(const [word,valid,message] of usage)for(const m of speech.matchAll(word))if(!valid.test(speech.slice(m.index)))throw Error(message);
   if(/(?:很|有些|感到|非常)\s*\{\{(?:astonish|bewilder)\|/i.test(text)||/\{\{overt\|[^}]*\}\}\s*(?:承认|说|表示)/i.test(text)||/\{\{lean\|[^}]*\}\}\s*(?:每天|拖延)/i.test(text))throw Error('动词或形容词用法异常');
   if(patterns.some(r=>r.test(text)))throw Error('词性或配价未通过校验');
   if(/https?:\/\/|[\w.+-]+@[\w.-]+\.[A-Za-z]+|(?:\/Users\/|API[_ -]?KEY|Bearer\s|gh[pousr]_)|(?<!\d)1[3-9]\d{9}(?!\d)|(?<!\d)\d{17}[\dXx](?!\w)/i.test(text+s.title))throw Error('正文包含私人信息');
-  for(const m of matches){if(!frozen.has(key(m[1])))throw Error('标记词不在冻结 Group：'+m[1].slice(0,40));if(!m[2].trim()||m[2].trim().length>20||m[2].includes('|'))throw Error('标记短义异常：'+m[1].slice(0,40));seen.add(key(m[1]))}
+  for(const m of matches){if(!frozen.has(key(m[1])))throw Error('标记词不在冻结 Group：'+m[1].slice(0,40));if(!m[2].trim()||m[2].trim().length>8||!/[\u3400-\u9fff]/u.test(m[2])||m[2].includes('|'))throw Error('标记短义异常：'+m[1].slice(0,40));seen.add(key(m[1]))}
   return {segment_no:s.segment_no,title:s.title.trim(),content_markup:text,display_content:text.replace(markup,(_,w,g)=>`${w}（${g}）`),speech_content:text.replace(markup,(_,w)=>w),covered_words:matches.map(m=>m[1].trim())};
  });
  if(seen.size!==frozen.size)throw Error('目标词覆盖不完整');return segments;
 }
 export function prompt(gid,cards){
- const size=Math.ceil(cards.length/3),layout=Array.from({length:3},(_,i)=>({segment_no:i+1,title:'填中文场景标题',intro:'填简短中文场景引入。',sentences:cards.slice(i*size,(i+1)*size).map(c=>({word:c.word,english:'',meaning:'',gloss:''}))})).filter(s=>s.sentences.length);
- return `Write a bilingual listening story for an adult English learner. Return JSON only.
-Group: ${gid}
-Exact target words and their dictionary meanings: ${JSON.stringify(cards.map(c=>({word:c.word,translation:c.translation})))}
-Complete the THREE separate scenes in the JSON template below. Preserve every scene number, every word spelling and every sentence entry in its assigned scene. Do NOT merge the scenes into one. Use connected everyday scenes about study, work or ordinary life. Each scene has a Chinese title and a brief Chinese intro. The entries in each scene must form a coherent small story, not unrelated definitions.
-For each entry: word MUST equal the supplied target spelling; english MUST be a complete grammatical English sentence of about 6 to 18 words using that exact uninflected word; meaning is its natural Chinese translation; gloss is the target's Chinese meaning in that sentence, at most 8 Chinese characters. english contains English only, never Chinese. Do NOT put English words into Chinese grammar. Do NOT output braces, study markup or vertical bars in text fields; our program inserts markup.
-Use modal verbs or infinitives when needed to preserve verb spelling. Check verb objects and adjective usage. If present: use "I am apt to ...", "I immerse myself in ...", "Please acquaint yourself with ...", "The surprise may astonish ...", "Complex instructions can bewilder ...". Use "indifference" as a noun, "overt" as an adjective, and "momentary" before a noun. Do not rename the target word to a phrase such as "be apt to" or "immerse oneself".
-Every gloss must match the sentence's meaning, not merely a different dictionary sense. For "dubious about", use "怀疑的" or "存疑的", never "可疑的".
-Use fictional generic people only. No real personal facts, institutions, contacts, addresses, URLs, credentials or medical advice. Only entries for supplied target words; examples above are guidance, not extra words to include.
-Before returning, check the English sentence contains the exact word as a separate word. Plurals, past forms and derivatives do NOT count: for target "installment", use "an installment", not "installments". Fill all empty text fields. Return the complete template, with all three scenes and all entries:
-${JSON.stringify({group_id:gid,segments:layout})}`}
+ return `你正在为中国成人英语学习者生成“少文字、高密度、自然中文语境、非故事导向”的情景听读材料。
+当前学习组：${gid}，严格包含 ${cards.length} 个冻结目标词。
+目标词与词典释义：${JSON.stringify(cards.map(c=>({word:c.word,translation:c.translation})))}
+
+严格沿用现有情景听读原则：
+1. 以真实的工作与日常生活为语境，中文叙述为主体，目标英文词自然嵌入。少文字、高密度，不写玄幻或为串词硬编的长故事，不逐词堆砌例句，不使用完整英文句子加逐句中文翻译的结构。
+2. 按词义和自然搭配组织 2 到 4 个简短小场景。场景数由词组组合决定，不能固定分配词表顺序或强行合为一段。每段讲清一个真实、连贯的事情，避免冗长引入、总结和重复解释。
+3. 所有目标词必须使用 {{英文词|当前语境最短准确中文含义}} 标记。英文必须保持冻结词表原形；竖线后仅写该句最短最准的中文短义，不超过8字，不罗列词典释义。覆盖全部目标词，不能标记额外目标词。
+4. 必须保持英文词性、配价和搭配：动词带所需宾语、补语；形容词修饰名词或作表语。仅在必要时嵌入完整英文短语，以确保语法正确；英文短语用于服务中文语境，不能把全文变为英语例句及译文。
+示例：我决定 {{immerse|使沉浸}} myself in the report，专心研究报告；忙碌时 I am {{apt|容易……的}} to miss details，所以我逐项核对。
+上述示例只用于解释结构，未在目标列表中的词不得加入标记。acquaint 须带宾语及 with；immerse 须带宾语及 in；apt 须使用 be apt to do。dubious about 表示“怀疑的／存疑的”。不得把 astonish、bewilder 当形容词，把 overt 当副词。
+5. 逐词自查当前词义、词性、搭配、短义和场景常识。只写通用场景，不包含用户真实隐私、联系方式、凭据或医疗建议。
+6. content_markup 是唯一正文。仅返回以下结构的严格 JSON，无前言、总结、display_content、speech_content、sentences、english 或 meaning 字段：
+{"group_id":"${gid}","segments":[{"segment_no":1,"title":"简短中文场景标题","content_markup":"以中文为主体、自然嵌入标记目标词的简短情景段落"},{"segment_no":2,"title":"另一个简短中文场景标题","content_markup":"另一个中文情景段落"}]}`;
+}
 export async function contentHash(segments){return sha(JSON.stringify(segments))}
