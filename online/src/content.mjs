@@ -3,25 +3,32 @@ const markup=/\{\{([^|{}]+)\|([^{}]*)\}\}/g;
 // The model supplies complete English sentences and Chinese explanations.
 // Only this adapter inserts study markup; target spellings come from the task.
 export function normalizeGeneratedGroup(raw,gid,words){
- if(raw?.group_id!==gid||!Array.isArray(raw.segments)||raw.segments.length<2||raw.segments.length>4)throw Error('生成场景结构不合法');
- const frozen=new Map(words.map(w=>[key(w),w])),seen=new Set();
+ if(raw?.group_id!==gid||!Array.isArray(raw.segments)||!raw.segments.length||raw.segments.length>4)throw Error('生成场景结构不合法');
+ const frozen=new Map(words.map(w=>[key(w),w])),seen=new Set(),normalizations=[];
  const clean=(value,max)=>{if(typeof value!=='string'||!value.trim()||value.length>max||/[{}|]/.test(value))throw Error('生成文本格式不合法');return value.trim()};
  const segments=raw.segments.map((s,i)=>{
   if(s.segment_no!==i+1||!Array.isArray(s.sentences)||!s.sentences.length)throw Error('生成场景句子结构不合法');
   const title=clean(s.title,60),intro=clean(s.intro,200);
   const sentences=s.sentences.map(row=>{
    const word=frozen.get(key(clean(row.word,80)));if(!word||seen.has(key(word)))throw Error('生成句子词条不属于任务或重复');
-   const english=clean(row.english,500),meaning=clean(row.meaning,200),gloss=clean(row.gloss,8);
+   const english=clean(row.english,500),meaning=clean(row.meaning,200);let gloss=clean(row.gloss,8);
    if(/[\u3400-\u9fff]/u.test(english)||english.split(/\s+/).length<4||!/[.!?]["']?$/.test(english))throw Error('目标词必须放在完整英文句子中');
    if(!/[\u3400-\u9fff]/u.test(meaning)||!/[\u3400-\u9fff]/u.test(gloss))throw Error('中文说明或短义缺失');
-   const escaped=word.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),match=new RegExp('\\b'+escaped+'\\b','i');
+   if(key(word)==='dubious'&&/\bdubious\s+about\b/i.test(english)&&/可疑/.test(gloss)){
+    normalizations.push({word,rule:'dubious-about-sense',from:gloss,to:'存疑的'});gloss='存疑的';
+   }
+   // Preserve the original spoken plural; only the study marker uses its lemma.
+   const plural=key(word)==='installment',escaped=word.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),match=new RegExp('\\b'+escaped+(plural?'(s)?':'')+'\\b','i');
    if(!match.test(english))throw Error('英文句子未保留目标词原形：'+word);
-   seen.add(key(word));return english.replace(match,()=>`{{${word}|${gloss}}}`)+' '+meaning;
+   seen.add(key(word));return english.replace(match,(_,suffix)=>{
+    const ending=plural&&suffix==='s'?'s':'';if(ending)normalizations.push({word,rule:'noun-plural-marker',form:word+ending});
+    return `{{${word}|${gloss}}}`+ending;
+   })+' '+meaning;
   });
   return {segment_no:i+1,title,content_markup:intro+' '+sentences.join(' ')};
  });
  if(seen.size!==frozen.size)throw Error('生成句子目标词覆盖不完整');
- return {group_id:gid,segments};
+ return {group_id:gid,segments,normalizations};
 }
 export function validateGroup(raw,gid,words){
  if(!raw||raw.group_id!==gid||!Array.isArray(raw.segments)||!raw.segments.length||raw.segments.length>5)throw Error('Group 或段落数量不合法');
