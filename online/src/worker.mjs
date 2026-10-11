@@ -3,6 +3,7 @@ import {RULE_VERSION,key,addDays,shanghaiDay,applyRating,insertRecheck,selectWor
 import {validateGroup,normalizeGeneratedGroup,prompt,contentHash,CONTENT_CONTRACT} from './content.mjs';
 const json=(x,status=200)=>new Response(JSON.stringify(x),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 const err=(message,status=400)=>Object.assign(Error(message),{status});
+const canWrite=(env,url)=>env.ENVIRONMENT!=='production'||(env.FORMAL_ACTIVE==='true'&&url.hostname==='listen.zhaocaijinbao.top');
 const read=async(db,sql,...values)=>db.prepare(sql).bind(...values).first();
 const rows=async(db,sql,...values)=>(await db.prepare(sql).bind(...values).all()).results;
 const parse=r=>r?JSON.parse(r.body):null;
@@ -91,7 +92,10 @@ async function snapshot(db,day,environment='preview',writable=true){
  const task=await taskFor(db,day||m.current_date);if(!task)throw err('该日任务尚未冻结',404);
  const jobs=await rows(db,'SELECT group_id,status,content,content_hash,error FROM jobs WHERE day=?',task.date);
  const playback=await rows(db,'SELECT group_id,revision,body FROM playback WHERE session_id=?',task.session_id);
- return {ok:true,environment,writable,authority:'cloud-d1',rule_version:RULE_VERSION,revision:m.revision,current_date:m.current_date,task,cards:await cardsFor(db,task),listening:jobs.map(j=>({...j,content:j.content?JSON.parse(j.content):null})),playback:playback.map(p=>({...p,body:JSON.parse(p.body)})),dates:(await rows(db,'SELECT day FROM sessions ORDER BY day DESC')).map(r=>r.day)};
+ const completed=task.items.length>0&&task.items.every(i=>i.completed),nextDate=addDays(task.date,1),nextTask=completed?await taskFor(db,nextDate):null;
+ const nextJobs=nextTask?await rows(db,'SELECT group_id,status FROM jobs WHERE day=?',nextDate):[];
+ const nextDay={frozen:!!nextTask,date:nextDate,word_count:nextTask?.new_words.length||0,group_count:nextTask?.groups.length||0,ready_count:nextJobs.filter(j=>j.status==='ready').length};
+ return {ok:true,environment,writable,authority:'cloud-d1',rule_version:RULE_VERSION,revision:m.revision,current_date:m.current_date,next_day:nextDay,task,cards:await cardsFor(db,task),listening:jobs.map(j=>({...j,content:j.content?JSON.parse(j.content):null})),playback:playback.map(p=>({...p,body:JSON.parse(p.body)})),dates:(await rows(db,'SELECT day FROM sessions ORDER BY day DESC')).map(r=>r.day)};
 }
 async function progress(db,body){
  const task=await taskFor(db,body.date);if(!task||task.session_id!==body.session_id)throw err('听读任务已变化',409);
@@ -135,14 +139,34 @@ async function pronunciation(db,env,request,ctx){
 }
 function dailyCallLimit(env,day){
  const extra=Number(env.GENERATION_EXTRA_CALLS);
- return 4+(env.GENERATION_EXTRA_DAY===day&&Number.isInteger(extra)&&extra>0&&extra<=2?extra:0);
+ return 4+(env.GENERATION_EXTRA_DAY===day&&Number.isInteger(extra)&&extra>0&&extra<=8?extra:0);
 }
 async function reserve(db,env){
  const day=shanghaiDay(),month=day.slice(0,7);
- // Reserve 0.08 RMB before each <=4k output request. Conservative peak tariff upper bound.
+ // <=10k UTF-8 input bytes and <=7k total output tokens cost <=0.076 RMB
+ // at the peak tariff; the 0.08 reserve also covers message framing.
  const r=await db.prepare("INSERT INTO budget(day,calls,reserved_fen) SELECT ?,1,8 WHERE COALESCE((SELECT SUM(reserved_fen) FROM budget WHERE day LIKE ?),0)+8<=1000 ON CONFLICT(day) DO UPDATE SET calls=calls+1,reserved_fen=reserved_fen+8 WHERE calls<? AND COALESCE((SELECT SUM(reserved_fen) FROM budget WHERE day LIKE ?),0)+8<=1000").bind(day,month+'%',dailyCallLimit(env,day),month+'%').run();return !!r.meta.changes;
 }
-async function produce(env){
+async function reuseVerifiedContent(db,storageDb,env,job,group,token){
+ const history=await rows(db,"SELECT * FROM jobs WHERE status='ready' AND day<? AND group_id=? ORDER BY day DESC LIMIT 30",job.day,job.group_id);
+ for(const source of history){
+  const task=await taskFor(db,source.day),g=task?.groups.find(g=>'G'+String(g.group_id).padStart(2,'0')===source.group_id);
+  if(!g||JSON.stringify(g.words.map(key))!==JSON.stringify(group.words.map(key)))continue;
+  try{
+   if(source.signature!==await groupSignature(task.project_id,task.date,source.group_id,g.words))continue;
+   const original=JSON.parse(source.content),segments=validateGroup({group_id:job.group_id,segments:original.segments},job.group_id,group.words);
+   const hash=await contentHash(segments),speechHash=await sha(segments.map(s=>s.speech_content).join('\n'));
+   if(hash!==source.content_hash||speechHash!==original.speech_hash)continue;
+   const audioHash=original.audio?.match(/^\/api\/audio\/([a-f0-9]{64})$/)?.[1];
+   if(!audioHash||!(env.AUDIO?await hasAudio(env.AUDIO,storageDb,audioHash):await read(db,'SELECT chunk FROM audio WHERE hash=? LIMIT 1',audioHash)))continue;
+   const content={...original,contract:CONTENT_CONTRACT,generator:'reused-verified',signature:job.signature,reused_from:{day:source.day,signature:source.signature,generator:original.generator}};
+   const r=await db.prepare("UPDATE jobs SET status='ready',origin='reused-verified',content=?,content_hash=?,lease_until=0,error=NULL WHERE day=? AND group_id=? AND lease_token=?").bind(JSON.stringify(content),hash,job.day,job.group_id,token).run();
+   if(r.meta.changes)return true;
+  }catch{/* Reuse requires the same complete content and audio checks. */}
+ }
+ return false;
+}
+async function produce(env,allowGeneration=true){
  if(env.GENERATION_ENABLED!=='true'||!env.DEEPSEEK_KEY)return;
  const db=env.DB.withSession('first-primary');
  await advance(db);
@@ -164,11 +188,13 @@ async function produce(env){
     segments=validateGroup(normalized,job.group_id,g.words);normalizations=normalized.normalizations;candidateId=candidate.id;break;
    }catch{/* A cached candidate must still pass the current task's complete validation. */}}
   }
-  if(!segments){if(new TextEncoder().encode(prompt(job.group_id,cards)).length>16000)throw Error('生成输入超过预算允许长度');if(!await reserve(budgetDb,env))throw Error('每日或月度模型预算已达上限');
-   const r=await fetch('https://api.deepseek.com/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+env.DEEPSEEK_KEY,'Content-Type':'application/json'},body:JSON.stringify({model:'deepseek-flash',thinking:{type:'disabled'},messages:[{role:'user',content:prompt(job.group_id,cards)}],response_format:{type:'json_object'},max_tokens:4000,temperature:.4}),signal:AbortSignal.timeout(120000)});
+  if(!segments&&job.origin!=='api-contract-acceptance'&&await reuseVerifiedContent(db,budgetDb,env,job,g,token))return;
+  if(!allowGeneration){await db.prepare("UPDATE jobs SET status='pending',lease_until=0 WHERE day=? AND group_id=? AND lease_token=?").bind(job.day,job.group_id,token).run();return;}
+  if(!segments){if(new TextEncoder().encode(prompt(job.group_id,cards)).length>10000)throw Error('生成输入超过预算允许长度');if(!await reserve(budgetDb,env))throw Error('每日或月度模型预算已达上限');
+   const r=await fetch('https://api.deepseek.com/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+env.DEEPSEEK_KEY,'Content-Type':'application/json'},body:JSON.stringify({model:'deepseek-flash',thinking:{type:'enabled'},reasoning_effort:'high',messages:[{role:'user',content:prompt(job.group_id,cards)}],response_format:{type:'json_object'},max_tokens:7000,temperature:.4}),signal:AbortSignal.timeout(120000)});
    if(!r.ok)throw Error('DeepSeek 调用失败 '+r.status);const result=await r.json();
-   await budgetDb.prepare('INSERT INTO generation_usage(id,day,provider,usage) VALUES(?,?,?,?)').bind(token,shanghaiDay(),'deepseek',JSON.stringify({...result.usage,model:result.model,completed_at:new Date().toISOString(),format:CONTENT_CONTRACT,signature:job.signature,group_id:job.group_id,environment:env.ENVIRONMENT||'preview',candidate:result.choices[0].message.content})).run();
-   candidateId=token;try{const normalized=normalizeGeneratedGroup(JSON.parse(result.choices[0].message.content),job.group_id,g.words);segments=validateGroup(normalized,job.group_id,g.words);normalizations=normalized.normalizations}catch(e){await budgetDb.prepare("UPDATE generation_usage SET usage=json_set(usage,'$.validation_error',?) WHERE id=?").bind(e.message,token).run();throw e}
+   await budgetDb.prepare('INSERT INTO generation_usage(id,day,provider,usage) VALUES(?,?,?,?)').bind(token,shanghaiDay(),'deepseek',JSON.stringify({...result.usage,model:result.model,completed_at:new Date().toISOString(),format:CONTENT_CONTRACT,signature:job.signature,group_id:job.group_id,environment:env.ENVIRONMENT||'preview',request_reason:job.origin,candidate:result.choices[0].message.content})).run();
+   candidateId=token;try{if(result.choices[0].finish_reason==='length')throw Error('模型输出截断，不能发布');const normalized=normalizeGeneratedGroup(JSON.parse(result.choices[0].message.content),job.group_id,g.words);segments=validateGroup(normalized,job.group_id,g.words);normalizations=normalized.normalizations}catch(e){await budgetDb.prepare("UPDATE generation_usage SET usage=json_set(usage,'$.validation_error',?) WHERE id=?").bind(e.message,token).run();throw e}
   }
   if(candidateId){
    await budgetDb.prepare("UPDATE generation_usage SET usage=json_set(usage,'$.validated_signature',?,'$.normalizations',json(?)) WHERE id=?").bind(job.signature,JSON.stringify(normalizations),candidateId).run();
@@ -190,7 +216,7 @@ async function produce(env){
    }
    const bytes=joinWaves(parts);if(env.AUDIO){await writeAudio(env.AUDIO,budgetDb,audioHash,bytes)}else{const stmts=[];for(let n=0;n<bytes.length;n+=200000)stmts.push(db.prepare('INSERT OR IGNORE INTO audio(hash,chunk,data) VALUES(?,?,?)').bind(audioHash,n/200000,bytes.slice(n,n+200000)));await db.batch(stmts);}
   }
-  const content={contract:CONTENT_CONTRACT,generator:job.origin||'deepseek-api',candidate_id:candidateId,normalizations,segments,audio:'/api/audio/'+audioHash,signature:job.signature,active_version:1,speech_hash:await sha(speech)};
+  const content={contract:CONTENT_CONTRACT,generator:job.origin==='api-contract-acceptance'?'deepseek-api':(job.origin||'deepseek-api'),candidate_id:candidateId,normalizations,segments,audio:'/api/audio/'+audioHash,signature:job.signature,active_version:1,speech_hash:await sha(speech)};
   await db.prepare("UPDATE jobs SET status='ready',content=?,content_hash=?,lease_until=0,error=NULL WHERE day=? AND group_id=? AND lease_token=?").bind(JSON.stringify(content),await contentHash(segments),job.day,job.group_id,token).run();
   // Only temporary pieces are removed after the complete published audio exists.
   if(env.AUDIO)for(const hash of pieceHashes){try{await env.AUDIO.delete(hash);await budgetDb.prepare('DELETE FROM audio_objects WHERE hash=?').bind(hash).run()}catch{/* Keep an unfinished cleanup safely accounted for. */}}
@@ -201,26 +227,27 @@ export default {
   try{
    const url=new URL(request.url);if(url.pathname==='/health')return json({ok:true,service:'daily-listening-online',rule_version:RULE_VERSION});
    await identity(request,env);
+   if(env.ENVIRONMENT==='production'&&env.FORMAL_ACTIVE==='true'&&url.pathname==='/'&&url.hostname!=='listen.zhaocaijinbao.top')return Response.redirect('https://listen.zhaocaijinbao.top/',302);
    if(url.pathname.startsWith('/images/'))return json({ok:false,message:'在线版本不提供图片'},404);
    const db=env.DB.withSession('first-primary');
-   if(url.pathname==='/api/session'&&request.method==='GET'){const data=await snapshot(db,url.searchParams.get('date'),env.ENVIRONMENT||'preview',env.ENVIRONMENT!=='production'||env.FORMAL_ACTIVE==='true');if(data.listening.some(j=>j.status!=='ready'))ctx.waitUntil(produce(env));return json(data)}
+   if(url.pathname==='/api/session'&&request.method==='GET'){const data=await snapshot(db,url.searchParams.get('date'),env.ENVIRONMENT||'preview',canWrite(env,url));if(data.listening.some(j=>j.status!=='ready'))ctx.waitUntil(produce(env,false));return json(data)}
    if(url.pathname==='/latest'||url.pathname==='/latest/')return Response.redirect(url.origin+'/',302);
    if(url.pathname==='/api/pronunciation'&&request.method==='GET')return await pronunciation(db,env,request,ctx);
-   if(url.pathname==='/api/status'&&request.method==='GET')return json({ok:true,authority:'cloud-d1',budget:await rows(db,'SELECT * FROM budget ORDER BY day DESC LIMIT 31'),jobs:await rows(db,'SELECT day,group_id,status,error FROM jobs ORDER BY day DESC LIMIT 12')});
+   if(url.pathname==='/api/status'&&request.method==='GET')return json({ok:true,authority:'cloud-d1',budget:await rows((env.BUDGET||env.DB).withSession('first-primary'),'SELECT * FROM budget ORDER BY day DESC LIMIT 31'),jobs:await rows(db,'SELECT day,group_id,status,error FROM jobs ORDER BY day DESC LIMIT 12')});
    if(url.pathname==='/api/export'&&request.method==='GET')return json({project:await read(db,'SELECT * FROM project'),cards:await rows(db,'SELECT * FROM cards'),states:await rows(db,'SELECT * FROM states'),sessions:await rows(db,'SELECT * FROM sessions'),review_log:await rows(db,'SELECT * FROM review_log')});
    if(url.pathname.startsWith('/api/audio/')&&request.method==='GET')return await serveAudio(db,url.pathname.split('/').pop(),request,env.AUDIO,(env.BUDGET||env.DB).withSession('first-primary'));
    if(['/api/rate','/api/preview','/api/playback'].includes(url.pathname)&&request.method==='POST'){
-    if(env.ENVIRONMENT==='production'&&env.FORMAL_ACTIVE!=='true')throw err('正式接管尚未启用，请继续使用现有系统',503);
+    if(!canWrite(env,url))throw err('正式接管尚未启用，请继续使用现有系统',503);
     if(request.headers.get('Origin')!==url.origin)throw err('请求来源不一致',403);
     if(!request.headers.get('Content-Type')?.startsWith('application/json'))throw err('请求格式不合法');
     if(Number(request.headers.get('Content-Length'))>20000)throw err('请求过大',413);
     const body=await request.json();
     if(url.pathname==='/api/playback')return json(await progress(db,body));
-    const answer=await mutate(db,body,url.pathname==='/api/rate'?'rate':'preview');if(answer.all_completed)ctx.waitUntil(produce(env));return json(answer);
+    const answer=await mutate(db,body,url.pathname==='/api/rate'?'rate':'preview');if(answer.all_completed)ctx.waitUntil(produce(env,false));return json(answer);
    }
    if(url.pathname.startsWith('/api/'))throw err('接口不存在',404);
    const response=await env.ASSETS.fetch(request);const headers=new Headers(response.headers);headers.set('Cache-Control','private, no-cache');headers.set('X-Content-Type-Options','nosniff');headers.set('Referrer-Policy','same-origin');headers.set('Content-Security-Policy',"default-src 'self'; img-src 'self' data:; media-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'");return new Response(response.body,{status:response.status,headers});
   }catch(e){return json({ok:false,message:e.message},e.status||500)}
  },
- async scheduled(event,env,ctx){ctx.waitUntil(produce(env))}
+ async scheduled(event,env,ctx){await produce(env)}
 };
