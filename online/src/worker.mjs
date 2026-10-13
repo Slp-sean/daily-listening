@@ -172,9 +172,9 @@ async function produce(env,allowGeneration=true){
  const db=env.DB.withSession('first-primary');
  await advance(db);
  const budgetDb=(env.BUDGET||env.DB).withSession('first-primary');
- // Retries remain eligible after a new day starts; the shared daily/monthly
- // budget below limits paid calls, while the lease prevents concurrent work.
- const job=await read(db,"SELECT * FROM jobs WHERE status IN ('pending','retry','generating') AND lease_until<? ORDER BY day,group_id LIMIT 1",Date.now());if(!job)return;
+ // Keep production focused on the current and frozen next-day tasks.
+ // Historical unfinished tasks remain stored without consuming today's quota.
+ const job=await read(db,"SELECT * FROM jobs WHERE status IN ('pending','retry','generating') AND day>=(SELECT current_date FROM project WHERE id=1) AND lease_until<? ORDER BY day,group_id LIMIT 1",Date.now());if(!job)return;
  const token=crypto.randomUUID();const lease=await db.prepare("UPDATE jobs SET status='generating',error=NULL,lease_until=?,lease_token=?,attempts=attempts+CASE WHEN content IS NULL THEN 1 ELSE 0 END WHERE day=? AND group_id=? AND lease_until<?").bind(Date.now()+1200000,token,job.day,job.group_id,Date.now()).run();if(!lease.meta.changes)return;
  try{
   const task=await taskFor(db,job.day),g=task.groups.find(g=>'G'+String(g.group_id).padStart(2,'0')===job.group_id);if(!g||await groupSignature(task.project_id,task.date,job.group_id,g.words)!==job.signature)throw Error('冻结 Group 签名不匹配');
