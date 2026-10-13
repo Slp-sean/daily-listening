@@ -1,7 +1,7 @@
 import {hasAudio,writeAudio,readAudio,reserveStorage,reserveTts,speechParts,joinWaves} from './audio-store.mjs';
 import {RULE_VERSION,key,addDays,shanghaiDay,applyRating,insertRecheck,selectWords,makeTask,sha,groupSignature} from './srs.mjs';
 import {validateGroup,normalizeGeneratedGroup,generationPrompt,contentHash,CONTENT_CONTRACT} from './content.mjs';
-import {ensureQuality,QUALITY_POLICY} from './quality.mjs';
+import {ensureQuality,generateFreeDraft,QUALITY_POLICY} from './quality.mjs';
 const json=(x,status=200)=>new Response(JSON.stringify(x),{status,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 const err=(message,status=400)=>Object.assign(Error(message),{status});
 const canWrite=(env,url)=>env.ENVIRONMENT!=='production'||(env.FORMAL_ACTIVE==='true'&&url.hostname==='listen.zhaocaijinbao.top');
@@ -155,7 +155,7 @@ async function reuseVerifiedContent(db,storageDb,env,job,group,token){
   if(!g||JSON.stringify(g.words.map(key))!==JSON.stringify(group.words.map(key)))continue;
   try{
    if(source.signature!==await groupSignature(task.project_id,task.date,source.group_id,g.words))continue;
-   const original=JSON.parse(source.content);if(original.generator?.startsWith('deepseek-api')&&!original.quality_review?.approved)continue;const segments=validateGroup({group_id:job.group_id,segments:original.segments},job.group_id,group.words);
+   const original=JSON.parse(source.content);if((original.generator?.startsWith('deepseek-api')||original.generator?.startsWith('workers-ai-free')||original.quality_review)&&(!original.quality_review?.approved||original.quality_review.policy!==QUALITY_POLICY))continue;const segments=validateGroup({group_id:job.group_id,segments:original.segments},job.group_id,group.words);
    const hash=await contentHash(segments),speechHash=await sha(segments.map(s=>s.speech_content).join('\n'));
    if(hash!==source.content_hash||speechHash!==original.speech_hash)continue;
    const audioHash=original.audio?.match(/^\/api\/audio\/([a-f0-9]{64})$/)?.[1];
@@ -180,13 +180,13 @@ async function produce(env,allowGeneration=true){
   const task=await taskFor(db,job.day),g=task.groups.find(g=>'G'+String(g.group_id).padStart(2,'0')===job.group_id);if(!g||await groupSignature(task.project_id,task.date,job.group_id,g.words)!==job.signature)throw Error('冻结 Group 签名不匹配');
   const cards=(await cardsFor(db,task)).filter(c=>g.words.map(key).includes(key(c.word)));
   const savedContent=job.content?JSON.parse(job.content):null;
-  let segments=savedContent?validateGroup({group_id:job.group_id,segments:savedContent.segments||savedContent},job.group_id,g.words):null,normalizations=savedContent?.normalizations||[],candidateId=savedContent?.candidate_id||null;
+  let segments=savedContent?validateGroup({group_id:job.group_id,segments:savedContent.segments||savedContent},job.group_id,g.words):null,normalizations=savedContent?.normalizations||[],candidateId=savedContent?.candidate_id||null,generator=savedContent?.generator||'deepseek-api';
   if(!segments&&job.origin!=='api-contract-acceptance'&&await reuseVerifiedContent(db,budgetDb,env,job,g,token))return;
   if(!segments){
    const environment=env.ENVIRONMENT||'preview';
    const candidates=await rows(budgetDb,"SELECT id,usage FROM generation_usage WHERE provider='deepseek' AND json_extract(usage,'$.signature')=? AND json_extract(usage,'$.environment')=? AND json_extract(usage,'$.format')=? AND json_extract(usage,'$.contract_rejected') IS NULL AND COALESCE(json_extract(usage,'$.quality_rejected_policy'),'')!=? ORDER BY rowid DESC LIMIT 8",job.signature,environment,CONTENT_CONTRACT,QUALITY_POLICY);
    for(const candidate of candidates){try{
-    const saved=JSON.parse(candidate.usage),normalized=normalizeGeneratedGroup(JSON.parse(saved.candidate),job.group_id,g.words);
+    const saved=JSON.parse(candidate.usage);if(saved.validation_error==='模型输出截断，不能发布')continue;const normalized=normalizeGeneratedGroup(JSON.parse(saved.candidate),job.group_id,g.words);
     segments=validateGroup(normalized,job.group_id,g.words);normalizations=normalized.normalizations;candidateId=candidate.id;break;
    }catch{/* A cached candidate must still pass the current task's complete validation. */}}
   }
@@ -196,18 +196,19 @@ async function produce(env,allowGeneration=true){
    const prior=rejected?JSON.parse(rejected.usage):null,feedback=prior?.quality_rejected||prior?.validation_error||'',input=generationPrompt(job.group_id,cards,feedback);
    const free=await read(budgetDb,"SELECT amount FROM storage_budget WHERE metric='tts_neurons' AND period=?",new Date().toISOString().slice(0,10));
    if((free?.amount||0)+850>9000)throw Error('今日免费内容复核额度不足，暂停新的付费生成，额度恢复后自动继续');
-   if(!await reserve(budgetDb,env))throw Error('每日或月度模型预算已达上限');
+   if(!await reserve(budgetDb,env)){const freeDraft=await generateFreeDraft(env,budgetDb,job,cards);segments=freeDraft.segments;candidateId=freeDraft.candidate_id;generator=freeDraft.generator;}else{
    const r=await fetch('https://api.deepseek.com/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+env.DEEPSEEK_KEY,'Content-Type':'application/json'},body:JSON.stringify({model:'deepseek-flash',thinking:{type:'enabled'},reasoning_effort:'low',messages:[{role:'user',content:input}],response_format:{type:'json_object'},max_tokens:7000,temperature:.4}),signal:AbortSignal.timeout(120000)});
    if(!r.ok)throw Error('DeepSeek 调用失败 '+r.status);const result=await r.json();
    await budgetDb.prepare('INSERT INTO generation_usage(id,day,provider,usage) VALUES(?,?,?,?)').bind(token,shanghaiDay(),'deepseek',JSON.stringify({...result.usage,model:result.model,completed_at:new Date().toISOString(),format:CONTENT_CONTRACT,signature:job.signature,group_id:job.group_id,environment:env.ENVIRONMENT||'preview',request_reason:job.origin,quality_feedback:feedback,input_bytes:new TextEncoder().encode(input).length,candidate:result.choices[0].message.content})).run();
    candidateId=token;try{if(result.choices[0].finish_reason==='length')throw Error('模型输出截断，不能发布');const normalized=normalizeGeneratedGroup(JSON.parse(result.choices[0].message.content),job.group_id,g.words);segments=validateGroup(normalized,job.group_id,g.words);normalizations=normalized.normalizations}catch(e){await budgetDb.prepare("UPDATE generation_usage SET usage=json_set(usage,'$.validation_error',?) WHERE id=?").bind(e.message,token).run();throw e}
+   }
   }
   if(candidateId){
    await budgetDb.prepare("UPDATE generation_usage SET usage=json_set(usage,'$.validated_signature',?,'$.normalizations',json(?)) WHERE id=?").bind(job.signature,JSON.stringify(normalizations),candidateId).run();
-   await db.prepare('UPDATE jobs SET content=?,content_hash=? WHERE day=? AND group_id=? AND lease_token=?').bind(JSON.stringify({segments,candidate_id:candidateId,normalizations}),await contentHash(segments),job.day,job.group_id,token).run();
+   await db.prepare('UPDATE jobs SET content=?,content_hash=? WHERE day=? AND group_id=? AND lease_token=?').bind(JSON.stringify({segments,candidate_id:candidateId,normalizations,generator}),await contentHash(segments),job.day,job.group_id,token).run();
   }
   let quality;try{quality=await ensureQuality(env,budgetDb,job,cards,segments,savedContent?.quality_review)}catch(e){if(e.quality_rejected){if(candidateId)await budgetDb.prepare("UPDATE generation_usage SET usage=json_set(usage,'$.quality_rejected',?,'$.quality_rejected_policy',?) WHERE id=?").bind(e.message,QUALITY_POLICY,candidateId).run();await db.prepare('UPDATE jobs SET content=NULL,content_hash=NULL WHERE day=? AND group_id=? AND lease_token=?').bind(job.day,job.group_id,token).run()}throw e}segments=quality.segments;
-  await db.prepare('UPDATE jobs SET content=?,content_hash=? WHERE day=? AND group_id=? AND lease_token=?').bind(JSON.stringify({segments,candidate_id:candidateId,normalizations,quality_review:quality.review}),await contentHash(segments),job.day,job.group_id,token).run();
+  await db.prepare('UPDATE jobs SET content=?,content_hash=? WHERE day=? AND group_id=? AND lease_token=?').bind(JSON.stringify({segments,candidate_id:candidateId,normalizations,generator,quality_review:quality.review}),await contentHash(segments),job.day,job.group_id,token).run();
   if(env.TTS_ENABLED!=='true')throw Error('正文已通过校验，云端语音尚未启用');
   // MeloTTS Chinese supports Chinese/English mixed text. One immutable audio per Group.
   const speech=segments.map(s=>s.speech_content).join('\n'),audioHash=await sha('melotts-zh-v2:'+speech),pieceHashes=[];
@@ -224,7 +225,7 @@ async function produce(env,allowGeneration=true){
    }
    const bytes=joinWaves(parts);if(env.AUDIO){await writeAudio(env.AUDIO,budgetDb,audioHash,bytes)}else{const stmts=[];for(let n=0;n<bytes.length;n+=200000)stmts.push(db.prepare('INSERT OR IGNORE INTO audio(hash,chunk,data) VALUES(?,?,?)').bind(audioHash,n/200000,bytes.slice(n,n+200000)));await db.batch(stmts);}
   }
-  const content={contract:CONTENT_CONTRACT,generator:quality.revised?'deepseek-api+cloudflare-quality-revision':job.origin==='api-contract-acceptance'?'deepseek-api':(job.origin||'deepseek-api'),candidate_id:candidateId,normalizations,quality_review:quality.review,segments,audio:'/api/audio/'+audioHash,signature:job.signature,active_version:1,speech_hash:await sha(speech)};
+  const content={contract:CONTENT_CONTRACT,generator:quality.revised?generator+'+cloudflare-quality-revision':generator,candidate_id:candidateId,normalizations,quality_review:quality.review,segments,audio:'/api/audio/'+audioHash,signature:job.signature,active_version:1,speech_hash:await sha(speech)};
   await db.prepare("UPDATE jobs SET status='ready',content=?,content_hash=?,lease_until=0,error=NULL WHERE day=? AND group_id=? AND lease_token=?").bind(JSON.stringify(content),await contentHash(segments),job.day,job.group_id,token).run();
   // Only temporary pieces are removed after the complete published audio exists.
   if(env.AUDIO)for(const hash of pieceHashes){try{await env.AUDIO.delete(hash);await budgetDb.prepare('DELETE FROM audio_objects WHERE hash=?').bind(hash).run()}catch{/* Keep an unfinished cleanup safely accounted for. */}}
